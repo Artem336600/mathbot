@@ -6,7 +6,7 @@ import asyncio
 import sys
 
 from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.storage.redis import RedisStorage
 from loguru import logger
 
 from bot.config import settings
@@ -82,7 +82,8 @@ async def main() -> None:
     setup_logging()
 
     bot = Bot(token=settings.bot_token)
-    dp = Dispatcher(storage=MemoryStorage())
+    storage = RedisStorage.from_url(settings.redis_url)
+    dp = Dispatcher(storage=storage)
 
     # Register middlewares in correct order
     dp.update.middleware(DatabaseMiddleware())

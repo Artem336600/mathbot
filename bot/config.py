@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, field_validator
 from typing import List
 
 
@@ -29,7 +29,26 @@ class Settings(BaseSettings):
     log_level: str = Field(default="DEBUG", description="Log level (DEBUG/INFO/WARN/ERROR)")
 
     # Admin
-    admin_ids: List[int] = Field(default=[], description="Comma-separated list of admin Telegram IDs")
+    admin_ids: List[int] = Field(default=[], description="Telegram IDs of admins")
+
+    @field_validator("admin_ids", mode="before")
+    @classmethod
+    def parse_admin_ids(cls, v):
+        """Accept comma-separated '123,456' or JSON '[123,456]' or single int."""
+        if isinstance(v, (list, tuple)):
+            return [int(x) for x in v]
+        if isinstance(v, int):
+            return [v]
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return []
+            if v.startswith("["):
+                import json
+                return json.loads(v)
+            # comma-separated: "123456789,987654321"
+            return [int(x.strip()) for x in v.split(",") if x.strip()]
+        return v
 
 
 settings = Settings()

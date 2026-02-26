@@ -4,7 +4,8 @@ FSM: BroadcastFSM — get message, confirm, send.
 """
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Bot, CallbackQuery, Message
+from aiogram import Bot
+from aiogram.types import CallbackQuery, Message
 from loguru import logger
 
 from bot.config import settings
