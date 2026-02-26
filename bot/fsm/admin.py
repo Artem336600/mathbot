@@ -7,6 +7,11 @@ class AddTopicFSM(StatesGroup):
     waiting_theory = State()
 
 
+class EditTopicFSM(StatesGroup):
+    waiting_new_title = State()
+    waiting_new_theory = State()
+
+
 class AddQuestionFSM(StatesGroup):
     waiting_topic_choice = State()
     waiting_text = State()

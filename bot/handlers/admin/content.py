@@ -8,7 +8,7 @@ from aiogram.types import CallbackQuery, Message
 from loguru import logger
 
 from bot.config import settings
-from bot.fsm.admin import AddQuestionFSM, AddTopicFSM
+from bot.fsm.admin import AddQuestionFSM, AddTopicFSM, EditTopicFSM
 from bot.keyboards.admin_kb import (
     admin_questions_keyboard,
     admin_topic_actions_keyboard,
@@ -115,6 +115,78 @@ async def admin_delete_topic(callback: CallbackQuery, db):
     else:
         await callback.message.edit_text("❌ Тема не найдена.")
     await callback.answer()
+
+
+@router.callback_query(F.data.startswith("adm_edit_topic:"))
+async def admin_edit_topic_start(callback: CallbackQuery, state: FSMContext, db):
+    """Start edit topic FSM: ask for new title."""
+    if not is_admin(callback.from_user.id):
+        await callback.answer("⛔", show_alert=True)
+        return
+    topic_id = int(callback.data.split(":")[1])
+    topic = await TopicRepository.get(topic_id, db)
+    if not topic:
+        await callback.answer("Тема не найдена.", show_alert=True)
+        return
+
+    await state.set_state(EditTopicFSM.waiting_new_title)
+    await state.update_data(edit_topic_id=topic_id)
+    logger.info(f"[HANDLER:admin] Editing topic id={topic_id}")
+
+    await callback.message.answer(
+        f"✏️ Редактирование темы <b>{topic.title}</b>\n\n"
+        f"Введите новое название (или «-» чтобы оставить прежнее, «❌ Отмена»):",
+        reply_markup=cancel_keyboard(),
+        parse_mode="HTML",
+    )
+    await callback.answer()
+
+
+@router.message(EditTopicFSM.waiting_new_title)
+async def admin_edit_topic_title(message: Message, state: FSMContext, db):
+    if message.text == "❌ Отмена":
+        await state.clear()
+        await message.answer("Отменено.")
+        return
+
+    data = await state.get_data()
+    topic_id = data["edit_topic_id"]
+    topic = await TopicRepository.get(topic_id, db)
+
+    new_title = topic.title if message.text.strip() == "-" else message.text.strip()
+    await state.update_data(new_title=new_title)
+    await state.set_state(EditTopicFSM.waiting_new_theory)
+
+    current_theory = topic.theory_text or "(пусто)"
+    await message.answer(
+        f"📖 Текущая теория:\n<i>{current_theory[:300]}</i>\n\n"
+        f"Введите новую теорию (или «-» чтобы оставить прежнее, «❌ Отмена»):",
+        parse_mode="HTML",
+    )
+
+
+@router.message(EditTopicFSM.waiting_new_theory)
+async def admin_edit_topic_theory(message: Message, state: FSMContext, db):
+    if message.text == "❌ Отмена":
+        await state.clear()
+        await message.answer("Отменено.")
+        return
+
+    data = await state.get_data()
+    topic_id = data["edit_topic_id"]
+    new_title = data["new_title"]
+    topic = await TopicRepository.get(topic_id, db)
+
+    new_theory = topic.theory_text if message.text.strip() == "-" else message.text.strip()
+
+    updated = await TopicRepository.update(topic_id, db, title=new_title, theory_text=new_theory)
+    await state.clear()
+
+    logger.info(f"[HANDLER:admin] Topic updated: id={topic_id} title={new_title!r}")
+    await message.answer(
+        f"✅ Тема обновлена!\n\n<b>{updated.title}</b>",
+        parse_mode="HTML",
+    )
 
 
 # ─── Questions ────────────────────────────────────────────────────────────────
