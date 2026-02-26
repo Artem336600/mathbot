@@ -209,6 +209,34 @@ async def admin_questions(callback: CallbackQuery, db):
     await callback.answer()
 
 
+@router.callback_query(F.data.startswith("adm_qs:"))
+async def admin_questions_topic(callback: CallbackQuery, db):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("⛔", show_alert=True)
+        return
+    topic_id = int(callback.data.split(":")[1])
+    topic = await TopicRepository.get(topic_id, db)
+    if not topic:
+        await callback.answer("Тема не найдена.", show_alert=True)
+        return
+        
+    questions = await QuestionRepository.get_by_topic(topic_id, db)
+    text = (
+        f"❓ <b>Вопросы темы: {topic.title}</b>\n\n"
+        f"Всего вопросов: <b>{len(questions)}</b>\n\n"
+        f"<i>(Детальный список и редактирование пока в разработке)</i>\n"
+    )
+    
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="➕ Добавить вопрос", callback_data=f"admin_add_q:{topic_id}")],
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="admin_questions")]
+    ])
+    
+    await callback.message.edit_text(text, reply_markup=kb, parse_mode="HTML")
+    await callback.answer()
+
+
 @router.callback_query(F.data.startswith("admin_add_q:"))
 async def start_add_question(callback: CallbackQuery, state: FSMContext, db):
     if not is_admin(callback.from_user.id):
