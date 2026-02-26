@@ -193,7 +193,7 @@
 
 ## Phase 7: Профиль (US-007)
 
-- [ ] **Task 14: Хендлер профиля (bot/handlers/profile.py)**
+- [x] **Task 14: Хендлер профиля (bot/handlers/profile.py)**
   - Создать `bot/keyboards/profile_kb.py`: `profile_keyboard()` → «🔙 Назад в меню»
   - Создать `bot/handlers/profile.py`:
     - Хендлеры для `callback: profile` и Reply-кнопки «👤 Профиль»
@@ -217,7 +217,7 @@
 
 ## Phase 8: Админпанель (US-008, 009, 011)
 
-- [ ] **Task 15: Структура и FSM админки**
+- [x] **Task 15: Структура и FSM админки**
   - Создать `bot/fsm/admin.py`:
     - `AdminAddTopicState`: `waiting_title`, `waiting_theory`
     - `AdminAddQuestionState`: `waiting_topic`, `waiting_text`, `waiting_options`, `waiting_answer`, `waiting_difficulty`, `waiting_explanation`
@@ -229,7 +229,7 @@
     - `admin_topic_manage_keyboard(topic_id)` → «➕ Добавить задачу», «✏️ Переименовать», «🗑 Удалить», «🔙 Назад»
     - `admin_confirm_keyboard()` → «✅ Подтвердить», «❌ Отмена»
 
-- [ ] **Task 16: Хендлеры админпанели (bot/handlers/admin/)**
+- [x] **Task 16: Хендлеры админпанели (bot/handlers/admin/)**
   - Создать `bot/handlers/admin/menu.py`:
     - `/admin` → проверка `user.is_admin` (иначе «⛔ Нет доступа»), показать `admin_menu_keyboard()`
     - `callback: admin_menu` → показать меню
