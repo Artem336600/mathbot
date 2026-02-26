@@ -80,6 +80,9 @@ async def add_topic_title(message: Message, state: FSMContext):
         await state.clear()
         await message.answer("Отменено.")
         return
+    if len(message.text.strip()) > 128:
+        await message.answer("❌ Название слишком длинное (макс. 128 символов).")
+        return
     await state.update_data(title=message.text.strip())
     await state.set_state(AddTopicFSM.waiting_theory)
     await message.answer(
@@ -232,6 +235,9 @@ async def aq_text(message: Message, state: FSMContext):
     if message.text == "❌ Отмена":
         await state.clear()
         await message.answer("Отменено.")
+        return
+    if len(message.text.strip()) > 2000:
+        await message.answer("❌ Текст вопроса слишком длинный (макс. 2000 символов).")
         return
     await state.update_data(text=message.text.strip())
     await _ask_option(message, "A", state, AddQuestionFSM.waiting_option_a)

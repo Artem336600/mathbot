@@ -22,10 +22,9 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    # ports exposed only within Docker network — do NOT expose externally on VPS
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d mathtrainer"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d mathtrainer" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -36,10 +35,9 @@ services:
     image: redis:7-alpine
     container_name: mathtrainer_redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    # ports exposed only within Docker network — do NOT expose externally on VPS
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -48,6 +46,7 @@ services:
 
 volumes:
   postgres_data:
+
 
 networks:
   mathtrainer_net:

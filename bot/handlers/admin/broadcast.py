@@ -43,6 +43,15 @@ async def broadcast_text(message: Message, state: FSMContext):
         await message.answer("Рассылка отменена.")
         return
 
+    # Telegram message length limit
+    MAX_BROADCAST_LEN = 4096
+    if len(message.text) > MAX_BROADCAST_LEN:
+        await message.answer(
+            f"❌ Текст слишком длинный: {len(message.text)} символов.\n"
+            f"Максимум: {MAX_BROADCAST_LEN}."
+        )
+        return
+
     await state.update_data(broadcast_text=message.text)
     await state.set_state(BroadcastFSM.confirming)
 
