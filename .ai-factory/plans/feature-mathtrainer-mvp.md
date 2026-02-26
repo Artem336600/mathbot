@@ -126,7 +126,7 @@
 
 ## Phase 4: Режим Тренировка (US-003)
 
-- [ ] **Task 11: FSM и хендлеры Тренировки (bot/handlers/training.py)**
+- [x] **Task 11: FSM и хендлеры Тренировки (bot/handlers/training.py)**
   - Создать `bot/fsm/training.py`: `class TrainingState(StatesGroup): in_progress = State()`
   - Создать `bot/keyboards/training.py`:
     - `training_setup_keyboard(topics, selected_ids)` → Inline: список тем с чекбоксами (✅/☐), кнопки «▶️ Начать» и «🔙 Назад»
@@ -150,7 +150,7 @@
 
 ## Phase 5: Каталог тем (US-004)
 
-- [ ] **Task 12: Хендлеры каталога тем (bot/handlers/topics.py)**
+- [x] **Task 12: Хендлеры каталога тем (bot/handlers/topics.py)**
   - Создать `bot/keyboards/topics.py`:
     - `topics_list_keyboard(topics)` → Inline: список тем (каждая — кнопка) + «🔙 Назад»
     - `topic_card_keyboard(topic_id)` → «📖 Теория», «📝 Задачи», «🔙 Назад»; callback: `topic_card:{id}` (~18 байт ✅)
@@ -172,7 +172,7 @@
 
 ## Phase 6: Работа над ошибками (US-006)
 
-- [ ] **Task 13: Хендлеры работы над ошибками (bot/handlers/mistakes.py)**
+- [x] **Task 13: Хендлеры работы над ошибками (bot/handlers/mistakes.py)**
   - Создать `bot/keyboards/mistakes.py`:
     - `mistakes_menu_keyboard(has_mistakes, topics_with_mistakes)` → «🎲 Все подряд», «📂 По теме» + список тем + «🔙 Назад»
     - `mistake_answer_keyboard(options: dict)` → 4 варианта
