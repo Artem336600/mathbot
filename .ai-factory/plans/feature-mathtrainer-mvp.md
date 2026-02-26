@@ -101,7 +101,7 @@
 
 ## Phase 3: Режим Спринт (US-002)
 
-- [ ] **Task 10: FSM и хендлеры Спринта (bot/handlers/sprint.py)**
+- [x] **Task 10: FSM и хендлеры Спринта (bot/handlers/sprint.py)**
   - Создать `bot/fsm/sprint.py`: `class SprintState(StatesGroup): in_progress = State()`
   - Создать `bot/keyboards/sprint.py`:
     - `sprint_intro_keyboard()` — кнопки «▶️ Поехали» и «🔙 Назад»
