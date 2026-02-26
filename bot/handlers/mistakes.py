@@ -53,17 +53,17 @@ async def mistakes_menu(callback: CallbackQuery, db):
     await callback.answer()
 
 
-async def _show_mistake(callback: CallbackQuery, topic_id: int | None, db) -> None:
+async def _show_mistake(callback: CallbackQuery, topic_id: int | None, db, send_new: bool = False) -> None:
     """Helper: pick random mistake and show it."""
     uid = callback.from_user.id
     mistake = await get_random_mistake(uid, topic_id, db)
 
     if not mistake:
-        await callback.message.edit_text(
-            "🎉 <b>Все ошибки исправлены!</b>",
-            reply_markup=mistakes_empty_keyboard(),
-            parse_mode="HTML",
-        )
+        text = "🎉 <b>Все ошибки исправлены!</b>" if topic_id is None else "🎉 <b>В этой теме все ошибки исправлены!</b>"
+        if send_new:
+            await callback.message.answer(text, reply_markup=mistakes_empty_keyboard(), parse_mode="HTML")
+        else:
+            await callback.message.edit_text(text, reply_markup=mistakes_empty_keyboard(), parse_mode="HTML")
         return
 
     question = await QuestionRepository.get_by_id(mistake.question_id, db)
@@ -73,14 +73,15 @@ async def _show_mistake(callback: CallbackQuery, topic_id: int | None, db) -> No
     # Store in Redis
     await session_service.set_temp(
         uid, "mistakes_session",
-        {"current_mistake_id": mistake.id, "current_question_id": question.id}
+        {"current_mistake_id": mistake.id, "current_question_id": question.id, "topic_id": topic_id}
     )
 
-    await callback.message.edit_text(
-        f"❌ <b>Ошибка</b>\n\n{question.text}",
-        reply_markup=mistake_answer_keyboard(question.get_options()),
-        parse_mode="HTML",
-    )
+    text = f"❌ <b>Ошибка</b>\n\n{question.text}"
+    markup = mistake_answer_keyboard(question.get_options())
+    if send_new:
+        await callback.message.answer(text, reply_markup=markup, parse_mode="HTML")
+    else:
+        await callback.message.edit_text(text, reply_markup=markup, parse_mode="HTML")
 
 
 @router.callback_query(F.data == "mis_all")
@@ -110,6 +111,7 @@ async def mistake_answer(callback: CallbackQuery, db, user):
 
     mistake_id = temp["current_mistake_id"]
     question_id = temp["current_question_id"]
+    topic_id = temp.get("topic_id")
 
     question = await QuestionRepository.get_by_id(question_id, db)
     if not question:
@@ -134,19 +136,10 @@ async def mistake_answer(callback: CallbackQuery, db, user):
             + (f"💡 {question.explanation}" if question.explanation else "")
         )
 
-    # Check remaining mistakes
-    remaining = await MistakeRepository.count(uid, db)
+    await callback.message.edit_text(feedback, parse_mode="HTML")
 
-    if remaining == 0:
-        await session_service.delete_temp(uid, "mistakes_session")
-        await callback.message.edit_text(
-            f"{feedback}\n\n🎉 <b>Все ошибки исправлены!</b>",
-            reply_markup=mistakes_empty_keyboard(),
-            parse_mode="HTML",
-        )
-    else:
-        await callback.message.edit_text(feedback, parse_mode="HTML")
-        # Show next mistake automatically
-        await _show_mistake(callback, topic_id=None, db=db)
+    # Check remaining mistakes logic is handled by _show_mistake
+    # We send the next mistake as a NEW message, so the feedback above stays in chat
+    await _show_mistake(callback, topic_id=topic_id, db=db, send_new=True)
 
     await callback.answer()
