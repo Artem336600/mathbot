@@ -161,6 +161,7 @@ async def admin_edit_topic_title(message: Message, state: FSMContext, db):
     await message.answer(
         f"📖 Текущая теория:\n<i>{current_theory[:300]}</i>\n\n"
         f"Введите новую теорию (или «-» чтобы оставить прежнее, «❌ Отмена»):",
+        reply_markup=cancel_keyboard(),
         parse_mode="HTML",
     )
 
