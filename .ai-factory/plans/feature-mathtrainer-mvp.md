@@ -62,14 +62,14 @@
 
 ## Phase 2: Ядро бота (Middlewares, Base, Navigation)
 
-- [ ] **Task 6: Middlewares и точка входа (bot/main.py)**
+- [x] **Task 6: Middlewares и точка входа (bot/main.py)**
   - Создать `bot/middlewares/database.py`: `DatabaseMiddleware` — инъекция AsyncSession в `data["db"]`
   - Создать `bot/middlewares/user.py`: `UserMiddleware` — **обязательно после DatabaseMiddleware** — получает/создаёт пользователя через `user_repo.get_or_create()` и инъектирует в `data["user"]`. Порядок регистрации: 1) DatabaseMiddleware, 2) UserMiddleware, 3) BanCheckMiddleware
   - Создать `bot/middlewares/ban_check.py`: `BanCheckMiddleware` — использует `data["user"].is_banned` (уже инъектирован UserMiddleware), если True — отвечает «⛔ Вы заблокированы» и прерывает цепочку
   - Создать `bot/main.py`: создание `Bot`, `Dispatcher`, регистрация middlewares в правильном порядке (DB → User → Ban), заглушки для роутеров (реальная регистрация в Task 17), запуск `dp.start_polling(bot)`
   - Logging: `[MW:DB] Session opened`, `[MW:User] User {uid} fetched/created`, `[MW:BAN] Blocked user {uid}`
 
-- [ ] **Task 7: Репозитории (repositories/)**
+- [x] **Task 7: Репозитории (repositories/)**
   - Создать `repositories/user_repo.py`: `get_or_create(tg_id, username, first_name)`, `get(tg_id)`, `update(user)`, `get_all_ids()`
   - Создать `repositories/topic_repo.py`: `get_all()`, `get(id)`, `create(title, theory)`, `update(id, **kwargs)`, `delete(id)`
   - Создать `repositories/question_repo.py`: `get_by_topic(topic_id)`, `get_by_difficulty(topic_ids, difficulty, limit)`, `get_random(topic_ids, limit)`, `create(...)`, `update(id, **kwargs)`
@@ -77,7 +77,7 @@
   - Создать `repositories/progress_repo.py`: `add(user_id, question_id, is_correct)`, `get_accuracy(user_id)`
   - Logging: `[REPO:User] get_or_create tg_id={tg_id}`, `[REPO:Question] fetched {n} questions difficulty={d}`
 
-- [ ] **Task 8: Сервисы (services/)**
+- [x] **Task 8: Сервисы (services/)**
   - Создать `services/user_service.py`: `register_user(tg_id, username, first_name, db)` — регистрация или получение
   - Создать `services/stats_service.py`: `award_xp(user_id, amount, db)` → `{xp, level, level_up}`, `update_streak(user_id, db)`, `update_accuracy(user_id, db)`
   - Создать `services/session_service.py`: Redis-клиент; `create_sprint_session(user_id, questions)`, `get_session(user_id, mode)`, `update_session(user_id, mode, data)`, `delete_session(user_id, mode)`; ключи: `sprint:{user_id}`, `training:{user_id}`
@@ -89,7 +89,7 @@
   - Создать `services/broadcast_service.py`: `send_to_all(text: str, bot: Bot, db) -> dict` — получает все user_ids через `user_repo.get_all_ids()`, отправляет каждому с задержкой `asyncio.sleep(0.05)`, считает `{sent: int, failed: int}`, обрабатывает `TelegramForbiddenError` (пользователь заблокировал бота) без остановки цикла
   - Logging: `[SVC:Stats] User {uid} +{xp}XP → total={total}, level={level}`, `[SVC:Session] Created sprint session {uid}: {n} questions`, `[SVC:Broadcast] Sending to {n} users`, `[SVC:Broadcast] Progress {sent}/{total}`, `[SVC:Broadcast] Done: sent={sent} failed={failed}`
 
-- [ ] **Task 9: Клавиатуры и Reply Navigation (keyboards/)**
+- [x] **Task 9: Клавиатуры и Reply Navigation (keyboards/)**
   - Создать `bot/keyboards/reply.py`: `main_reply_keyboard()` — Reply Keyboard с кнопками «🏠 Меню» и «👤 Профиль»
   - Создать `bot/keyboards/main_menu.py`: `main_menu_keyboard()` — Inline с кнопками: 🚀 Спринт, 🏋️ Тренировка, 📚 Темы, ❌ Мои ошибки, 👤 Профиль
   - Создать `bot/handlers/start.py`: router, хендлер `/start` (регистрирует пользователя через `user_service`, показывает главное меню), хендлер `«🏠 Меню»` (Reply), callback `main_menu`
