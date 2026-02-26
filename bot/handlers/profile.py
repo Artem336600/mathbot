@@ -3,13 +3,12 @@ Profile handler — US-007.
 Shows XP bar, level, accuracy, streak, total solved.
 """
 from aiogram import F, Router
-from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 from loguru import logger
 
 from bot.keyboards.profile_kb import profile_keyboard
 from repositories.progress_repo import ProgressRepository
-from services.stats_service import LEVELS, get_xp_bar, get_xp_progress_text
+from services.stats_service import get_xp_bar, get_xp_progress_text
 
 router = Router()
 
