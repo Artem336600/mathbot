@@ -43,3 +43,29 @@ async def admin_menu_callback(callback: CallbackQuery):
         parse_mode="HTML",
     )
     await callback.answer()
+
+
+@router.callback_query(F.data == "admin_users")
+async def admin_users_callback(callback: CallbackQuery, db):
+    uid = callback.from_user.id
+    if not is_admin(uid):
+        await callback.answer("⛔ Нет доступа.", show_alert=True)
+        return
+
+    from repositories.user_repo import UserRepository
+    # For MVP we can use get_all_ids, though a proper count() method is better
+    active_user_ids = await UserRepository.get_all_ids(db)
+    
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    back_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="admin_menu")]
+    ])
+
+    await callback.message.edit_text(
+        f"👥 <b>Статистика пользователей</b>\n\n"
+        f"🌟 Активных пользователей: <b>{len(active_user_ids)}</b>\n\n"
+        f"<i>(Детальная аналитика в разработке)</i>",
+        reply_markup=back_kb,
+        parse_mode="HTML",
+    )
+    await callback.answer()
