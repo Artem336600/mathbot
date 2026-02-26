@@ -253,7 +253,7 @@
 
 ## Phase 9: Финальная сборка
 
-- [ ] **Task 17: Регистрация всех роутеров и финальная интеграция**
+- [x] **Task 17: Регистрация всех роутеров и финальная интеграция**
   - В `bot/main.py` зарегистрировать все роутеры в правильном порядке:
     `start → sprint → training → topics → mistakes → profile → admin/menu → admin/content → admin/broadcast`
   - Добавить глобальный exception handler (логировать traceback, куда пишет loguru, юзеру — «Произошла ошибка. Попробуйте ещё раз.»)
@@ -261,7 +261,7 @@
   - Проверить все callback_data на уникальность, отсутствие коллизий
   - Logging: `[BOOT] All routers registered`, `[BOOT] DB migrated`, `[BOOT] Redis connected`
 
-- [ ] **Task 18: Финальная проверка и README**
+- [x] **Task 18: Финальная проверка и README**
   - Проверить `docker-compose up --build` — бот стартует, БД создаётся, seed отрабатывает
   - Пройти базовый user-flow вручную: /start → Спринт → ответить 3 вопроса → проверить XP в профиле
   - Создать `README.md` с: описанием, требованиями (Docker), инструкцией запуска (`cp .env.example .env`, заполнить `BOT_TOKEN`, `docker-compose up -d`, `python -m data.seed`)
