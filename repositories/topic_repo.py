@@ -20,9 +20,9 @@ class TopicRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def create(title: str, theory_text: str, db: AsyncSession, image_url: str | None = None) -> Topic:
-        logger.debug(f"[REPO:Topic] create title={title!r} has_image={bool(image_url)}")
-        topic = Topic(title=title, theory_text=theory_text, image_url=image_url)
+    async def create(title: str, theory_text: str, db: AsyncSession) -> Topic:
+        logger.debug(f"[REPO:Topic] create title={title!r}")
+        topic = Topic(title=title, theory_text=theory_text)
         db.add(topic)
         await db.commit()
         await db.refresh(topic)

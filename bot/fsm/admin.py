@@ -5,13 +5,11 @@ from aiogram.fsm.state import State, StatesGroup
 class AddTopicFSM(StatesGroup):
     waiting_title = State()
     waiting_theory = State()
-    waiting_image = State()
 
 
 class EditTopicFSM(StatesGroup):
     waiting_new_title = State()
     waiting_new_theory = State()
-    waiting_new_image = State()
 
 
 class AddQuestionFSM(StatesGroup):
@@ -24,7 +22,6 @@ class AddQuestionFSM(StatesGroup):
     waiting_correct = State()
     waiting_explanation = State()
     waiting_difficulty = State()
-    waiting_image = State()
 
 
 class BroadcastFSM(StatesGroup):

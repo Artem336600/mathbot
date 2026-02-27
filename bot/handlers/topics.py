@@ -69,17 +69,11 @@ async def topic_theory(callback: CallbackQuery, db):
         return
 
     theory = topic.theory_text or "Теория не добавлена."
-    text = f"📖 <b>{topic.title}</b>\n\n{theory}"
-    markup = topic_card_keyboard(topic_id)
-    if topic.image_url:
-        await callback.message.delete()
-        await callback.message.answer_photo(
-            photo=topic.image_url, caption=text, reply_markup=markup, parse_mode="HTML"
-        )
-    else:
-        await callback.message.edit_text(
-            text, reply_markup=markup, parse_mode="HTML"
-        )
+    await callback.message.edit_text(
+        f"📖 <b>{topic.title}</b>\n\n{theory}",
+        reply_markup=topic_card_keyboard(topic_id),
+        parse_mode="HTML",
+    )
     await callback.answer()
 
 
@@ -124,17 +118,11 @@ async def solve_question(callback: CallbackQuery, db):
 
     logger.debug(f"[HANDLER:topics] User {uid} solving q={question_id}")
 
-    text = f"❓ <b>Вопрос</b>\n\n{question.text}"
-    markup = task_solve_keyboard(question.get_options())
-    if question.image_url:
-        await callback.message.delete()
-        await callback.message.answer_photo(
-            photo=question.image_url, caption=text, reply_markup=markup, parse_mode="HTML"
-        )
-    else:
-        await callback.message.edit_text(
-            text, reply_markup=markup, parse_mode="HTML"
-        )
+    await callback.message.edit_text(
+        f"❓ <b>Вопрос</b>\n\n{question.text}",
+        reply_markup=task_solve_keyboard(question.get_options()),
+        parse_mode="HTML",
+    )
     await callback.answer()
 
 
@@ -203,15 +191,9 @@ async def topic_next(callback: CallbackQuery, db):
         {"current_question_id": question.id, "topic_id": topic_id}
     )
 
-    text = f"❓ <b>Вопрос</b>\n\n{question.text}"
-    markup = task_solve_keyboard(question.get_options())
-    if question.image_url:
-        await callback.message.delete()
-        await callback.message.answer_photo(
-            photo=question.image_url, caption=text, reply_markup=markup, parse_mode="HTML"
-        )
-    else:
-        await callback.message.edit_text(
-            text, reply_markup=markup, parse_mode="HTML"
-        )
+    await callback.message.edit_text(
+        f"❓ <b>Вопрос</b>\n\n{question.text}",
+        reply_markup=task_solve_keyboard(question.get_options()),
+        parse_mode="HTML",
+    )
     await callback.answer()

@@ -172,16 +172,11 @@ async def _show_sprint_question(callback: CallbackQuery, session: dict, db) -> N
         f"❓ <b>Вопрос {idx + 1}/{total}</b>\n\n"
         f"{question.text}"
     )
-    markup = answer_keyboard(question.get_options())
-    if question.image_url:
-        await callback.message.delete()
-        await callback.message.answer_photo(
-            photo=question.image_url, caption=text, reply_markup=markup, parse_mode="HTML"
-        )
-    else:
-        await callback.message.edit_text(
-            text, reply_markup=markup, parse_mode="HTML"
-        )
+    await callback.message.edit_text(
+        text,
+        reply_markup=answer_keyboard(question.get_options()),
+        parse_mode="HTML",
+    )
 
 
 async def _show_next_question_delayed(callback: CallbackQuery, session: dict, db) -> None:
@@ -202,12 +197,8 @@ async def _show_next_question_delayed(callback: CallbackQuery, session: dict, db
         f"❓ <b>Вопрос {idx + 1}/{total}</b>\n\n"
         f"{question.text}"
     )
-    markup = answer_keyboard(question.get_options())
-    if question.image_url:
-        await callback.message.answer_photo(
-            photo=question.image_url, caption=text, reply_markup=markup, parse_mode="HTML"
-        )
-    else:
-        await callback.message.answer(
-            text, reply_markup=markup, parse_mode="HTML"
-        )
+    await callback.message.answer(
+        text,
+        reply_markup=answer_keyboard(question.get_options()),
+        parse_mode="HTML",
+    )

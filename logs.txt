@@ -1,0 +1,38 @@
+mathtrainer_bot  | 2026-02-27 08:08:38.009 | DEBUG    | db.session:<module>:14 - [DB] Engine created for: postgresql+asyncpg://postgres:postgres@p...
+mathtrainer_bot  | [32m08:08:38[0m | [1mINFO    [0m | [36m__main__[0m - [1m[BOOT] Log level: DEBUG[0m
+mathtrainer_bot  | [32m08:08:38[0m | [34m[1mDEBUG   [0m | [36m__main__[0m - [34m[1m[BOOT] Middlewares registered: DB → User → Ban[0m
+mathtrainer_bot  | [32m08:08:38[0m | [1mINFO    [0m | [36m__main__[0m - [1m[BOOT] All routers registered[0m
+mathtrainer_bot  | [32m08:08:38[0m | [1mINFO    [0m | [36m__main__[0m - [1m[BOOT] Config loaded: db=postgresql+asyncpg://postgres:...[0m
+mathtrainer_bot  | [32m08:08:38[0m | [1mINFO    [0m | [36m__main__[0m - [1m[BOOT] Starting MathTrainer bot...[0m
+mathtrainer_bot  | [32m08:08:38[0m | [31m[1mERROR   [0m | [36m__main__[0m - [31m[1m[BOOT] Alembic migration failed: asyncio.run() cannot be called from a running event loop[0m
+mathtrainer_bot  | /app/bot/main.py:64: RuntimeWarning: coroutine 'run_async_migrations' was never awaited
+mathtrainer_bot  |   logger.error(f"[BOOT] Alembic migration failed: {e}")
+mathtrainer_bot  | RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+mathtrainer_bot  | [32m08:08:38[0m | [1mINFO    [0m | [36m__main__[0m - [1m[BOOT] Redis connected[0m
+mathtrainer_bot  | [32m08:08:45[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.database[0m - [34m[1m[MW:DB] Session opened[0m
+mathtrainer_bot  | [32m08:08:45[0m | [34m[1mDEBUG   [0m | [36mrepositories.user_repo[0m - [34m[1m[REPO:User] get_or_create tg_id=937734224[0m
+mathtrainer_bot  | [32m08:08:45[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.user[0m - [34m[1m[MW:User] User 937734224 fetched/created: level=Практик[0m
+mathtrainer_bot  | [32m08:08:45[0m | [1mINFO    [0m | [36mbot.handlers.admin.menu[0m - [1m[HANDLER:admin] Admin 937734224 opened panel[0m
+mathtrainer_bot  | [32m08:08:47[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.database[0m - [34m[1m[MW:DB] Session opened[0m
+mathtrainer_bot  | [32m08:08:47[0m | [34m[1mDEBUG   [0m | [36mrepositories.user_repo[0m - [34m[1m[REPO:User] get_or_create tg_id=937734224[0m
+mathtrainer_bot  | [32m08:08:47[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.user[0m - [34m[1m[MW:User] User 937734224 fetched/created: level=Практик[0m
+mathtrainer_bot  | [32m08:08:53[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.database[0m - [34m[1m[MW:DB] Session opened[0m
+mathtrainer_bot  | [32m08:08:53[0m | [34m[1mDEBUG   [0m | [36mrepositories.user_repo[0m - [34m[1m[REPO:User] get_or_create tg_id=937734224[0m
+mathtrainer_bot  | [32m08:08:53[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.user[0m - [34m[1m[MW:User] User 937734224 fetched/created: level=Практик[0m
+mathtrainer_bot  | [32m08:09:22[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.database[0m - [34m[1m[MW:DB] Session opened[0m
+mathtrainer_bot  | [32m08:09:22[0m | [34m[1mDEBUG   [0m | [36mrepositories.user_repo[0m - [34m[1m[REPO:User] get_or_create tg_id=937734224[0m
+mathtrainer_bot  | [32m08:09:22[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.user[0m - [34m[1m[MW:User] User 937734224 fetched/created: level=Практик[0m
+mathtrainer_bot  | [32m08:09:25[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.database[0m - [34m[1m[MW:DB] Session opened[0m
+mathtrainer_bot  | [32m08:09:25[0m | [34m[1mDEBUG   [0m | [36mrepositories.user_repo[0m - [34m[1m[REPO:User] get_or_create tg_id=937734224[0m
+mathtrainer_bot  | [32m08:09:25[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.user[0m - [34m[1m[MW:User] User 937734224 fetched/created: level=Практик[0m
+mathtrainer_bot  | [32m08:09:25[0m | [34m[1mDEBUG   [0m | [36mbot.handlers.start[0m - [34m[1m[HANDLER:start] main_menu callback from 937734224[0m
+mathtrainer_bot  | [32m08:09:28[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.database[0m - [34m[1m[MW:DB] Session opened[0m
+mathtrainer_bot  | [32m08:09:28[0m | [34m[1mDEBUG   [0m | [36mrepositories.user_repo[0m - [34m[1m[REPO:User] get_or_create tg_id=937734224[0m
+mathtrainer_bot  | [32m08:09:28[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.user[0m - [34m[1m[MW:User] User 937734224 fetched/created: level=Практик[0m
+mathtrainer_bot  | [32m08:09:28[0m | [1mINFO    [0m | [36mbot.handlers.admin.menu[0m - [1m[HANDLER:admin] Admin 937734224 opened panel[0m
+mathtrainer_bot  | [32m08:09:29[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.database[0m - [34m[1m[MW:DB] Session opened[0m
+mathtrainer_bot  | [32m08:09:29[0m | [34m[1mDEBUG   [0m | [36mrepositories.user_repo[0m - [34m[1m[REPO:User] get_or_create tg_id=937734224[0m
+mathtrainer_bot  | [32m08:09:29[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.user[0m - [34m[1m[MW:User] User 937734224 fetched/created: level=Практик[0m
+mathtrainer_bot  | [32m08:09:44[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.database[0m - [34m[1m[MW:DB] Session opened[0m
+mathtrainer_bot  | [32m08:09:44[0m | [34m[1mDEBUG   [0m | [36mrepositories.user_repo[0m - [34m[1m[REPO:User] get_or_create tg_id=937734224[0m
+mathtrainer_bot  | [32m08:09:44[0m | [34m[1mDEBUG   [0m | [36mbot.middlewares.user[0m - [34m[1m[MW:User] User 937734224 fetched/created: level=Практик[0m
