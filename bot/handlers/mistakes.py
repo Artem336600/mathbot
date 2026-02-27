@@ -144,8 +144,6 @@ async def mistake_answer(callback: CallbackQuery, db, user):
             + (f"💡 {question.explanation}" if question.explanation else "")
         )
 
-        )
-
     if question.image_url:
         await callback.message.edit_caption(caption=feedback, parse_mode="HTML")
     else:
