@@ -104,10 +104,12 @@ async def main() -> None:
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
 
+    from aiogram.types import ErrorEvent
+
     # Global error handler
     @dp.errors()
-    async def global_error_handler(event, exception):
-        logger.exception(f"[ERROR] Unhandled exception: {exception}")
+    async def global_error_handler(event: ErrorEvent):
+        logger.exception(f"[ERROR] Unhandled exception: {event.exception}")
         try:
             if event.update.message:
                 await event.update.message.answer(
