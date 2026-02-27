@@ -103,11 +103,22 @@ async def training_begin(callback: CallbackQuery, db):
         f"🏋️ <b>Тренировка</b> | Сложность: {'⭐' * session['difficulty']}\n\n"
         f"{question.text}"
     )
-    await callback.message.edit_text(
-        text,
-        reply_markup=training_answer_keyboard(question.get_options()),
-        parse_mode="HTML",
-    )
+    
+    markup = training_answer_keyboard(question.get_options())
+    if question.image_url:
+        await callback.message.delete()
+        await callback.message.answer_photo(
+            photo=question.image_url,
+            caption=text,
+            reply_markup=markup,
+            parse_mode="HTML"
+        )
+    else:
+        await callback.message.edit_text(
+            text,
+            reply_markup=markup,
+            parse_mode="HTML",
+        )
     await callback.answer()
 
 
@@ -181,18 +192,31 @@ async def training_answer(callback: CallbackQuery, db, user):
     session["current_question_id"] = question.id
     await session_service.update_session(uid, "training", session)
 
-    # Show feedback then next question
-    await callback.message.edit_text(feedback, parse_mode="HTML")
+    if question.image_url:
+        await callback.message.edit_caption(caption=feedback, parse_mode="HTML")
+    else:
+        await callback.message.edit_text(feedback, parse_mode="HTML")
+        
     next_text = (
         f"🏋️ <b>Тренировка</b> | #{session['solved_count'] + 1} | "
         f"Сложность: {'⭐' * session['difficulty']}\n\n"
         f"{question.text}"
     )
-    await callback.message.answer(
-        next_text,
-        reply_markup=training_answer_keyboard(question.get_options()),
-        parse_mode="HTML",
-    )
+    
+    markup = training_answer_keyboard(question.get_options())
+    if question.image_url:
+        await callback.message.answer_photo(
+            photo=question.image_url,
+            caption=next_text,
+            reply_markup=markup,
+            parse_mode="HTML",
+        )
+    else:
+        await callback.message.answer(
+            next_text,
+            reply_markup=markup,
+            parse_mode="HTML",
+        )
     await callback.answer()
 
 

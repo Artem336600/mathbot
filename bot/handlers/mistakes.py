@@ -79,9 +79,17 @@ async def _show_mistake(callback: CallbackQuery, topic_id: int | None, db, send_
     text = f"❌ <b>Ошибка</b>\n\n{question.text}"
     markup = mistake_answer_keyboard(question.get_options())
     if send_new:
-        await callback.message.answer(text, reply_markup=markup, parse_mode="HTML")
+        if question.image_url:
+            await callback.message.answer_photo(photo=question.image_url, caption=text, reply_markup=markup, parse_mode="HTML")
+        else:
+            await callback.message.answer(text, reply_markup=markup, parse_mode="HTML")
     else:
-        await callback.message.edit_text(text, reply_markup=markup, parse_mode="HTML")
+        if question.image_url:
+            # Can't edit text into photo, so we just delete and send new
+            await callback.message.delete()
+            await callback.message.answer_photo(photo=question.image_url, caption=text, reply_markup=markup, parse_mode="HTML")
+        else:
+            await callback.message.edit_text(text, reply_markup=markup, parse_mode="HTML")
 
 
 @router.callback_query(F.data == "mis_all")
@@ -136,7 +144,12 @@ async def mistake_answer(callback: CallbackQuery, db, user):
             + (f"💡 {question.explanation}" if question.explanation else "")
         )
 
-    await callback.message.edit_text(feedback, parse_mode="HTML")
+        )
+
+    if question.image_url:
+        await callback.message.edit_caption(caption=feedback, parse_mode="HTML")
+    else:
+        await callback.message.edit_text(feedback, parse_mode="HTML")
 
     # Check remaining mistakes logic is handled by _show_mistake
     # We send the next mistake as a NEW message, so the feedback above stays in chat

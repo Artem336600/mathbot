@@ -124,16 +124,28 @@ async def sprint_answer(callback: CallbackQuery, db, user):
             + (f"🎉 <b>Уровень повышен: {bonus_result['level']}!</b>\n" if bonus_result.get("level_up") else "")
         )
         logger.info(f"[HANDLER:sprint] Done: {session['correct_count']}/{total} user={uid}")
-        await callback.message.edit_text(
-            result_text, reply_markup=sprint_result_keyboard(), parse_mode="HTML"
-        )
+        
+        if question.image_url:
+            await callback.message.edit_caption(
+                caption=result_text, reply_markup=sprint_result_keyboard(), parse_mode="HTML"
+            )
+        else:
+            await callback.message.edit_text(
+                result_text, reply_markup=sprint_result_keyboard(), parse_mode="HTML"
+            )
     else:
         # Update session and show next question
         await session_service.update_session(uid, "sprint", session)
-        await callback.message.edit_text(
-            feedback,
-            parse_mode="HTML",
-        )
+        if question.image_url:
+            await callback.message.edit_caption(
+                caption=feedback,
+                parse_mode="HTML",
+            )
+        else:
+            await callback.message.edit_text(
+                feedback,
+                parse_mode="HTML",
+            )
         await _show_next_question_delayed(callback, session, db)
 
     await callback.answer()
@@ -172,11 +184,23 @@ async def _show_sprint_question(callback: CallbackQuery, session: dict, db) -> N
         f"❓ <b>Вопрос {idx + 1}/{total}</b>\n\n"
         f"{question.text}"
     )
-    await callback.message.edit_text(
-        text,
-        reply_markup=answer_keyboard(question.get_options()),
-        parse_mode="HTML",
-    )
+    
+    markup = answer_keyboard(question.get_options())
+    if question.image_url:
+        # First question of sprint, coming from intro message without image
+        await callback.message.delete()
+        await callback.message.answer_photo(
+            photo=question.image_url,
+            caption=text,
+            reply_markup=markup,
+            parse_mode="HTML"
+        )
+    else:
+        await callback.message.edit_text(
+            text,
+            reply_markup=markup,
+            parse_mode="HTML",
+        )
 
 
 async def _show_next_question_delayed(callback: CallbackQuery, session: dict, db) -> None:
@@ -197,8 +221,18 @@ async def _show_next_question_delayed(callback: CallbackQuery, session: dict, db
         f"❓ <b>Вопрос {idx + 1}/{total}</b>\n\n"
         f"{question.text}"
     )
-    await callback.message.answer(
-        text,
-        reply_markup=answer_keyboard(question.get_options()),
-        parse_mode="HTML",
-    )
+    
+    markup = answer_keyboard(question.get_options())
+    if question.image_url:
+        await callback.message.answer_photo(
+            photo=question.image_url,
+            caption=text,
+            reply_markup=markup,
+            parse_mode="HTML",
+        )
+    else:
+        await callback.message.answer(
+            text,
+            reply_markup=markup,
+            parse_mode="HTML",
+        )
