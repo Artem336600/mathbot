@@ -103,11 +103,16 @@ async def training_begin(callback: CallbackQuery, db):
         f"🏋️ <b>Тренировка</b> | Сложность: {'⭐' * session['difficulty']}\n\n"
         f"{question.text}"
     )
-    await callback.message.edit_text(
-        text,
-        reply_markup=training_answer_keyboard(question.get_options()),
-        parse_mode="HTML",
-    )
+    markup = training_answer_keyboard(question.get_options())
+    if question.image_url:
+        await callback.message.delete()
+        await callback.message.answer_photo(
+            photo=question.image_url, caption=text, reply_markup=markup, parse_mode="HTML"
+        )
+    else:
+        await callback.message.edit_text(
+            text, reply_markup=markup, parse_mode="HTML"
+        )
     await callback.answer()
 
 
@@ -188,11 +193,15 @@ async def training_answer(callback: CallbackQuery, db, user):
         f"Сложность: {'⭐' * session['difficulty']}\n\n"
         f"{question.text}"
     )
-    await callback.message.answer(
-        next_text,
-        reply_markup=training_answer_keyboard(question.get_options()),
-        parse_mode="HTML",
-    )
+    markup = training_answer_keyboard(question.get_options())
+    if question.image_url:
+        await callback.message.answer_photo(
+            photo=question.image_url, caption=next_text, reply_markup=markup, parse_mode="HTML"
+        )
+    else:
+        await callback.message.answer(
+            next_text, reply_markup=markup, parse_mode="HTML"
+        )
     await callback.answer()
 
 

@@ -63,6 +63,7 @@ class QuestionRepository:
         difficulty: int,
         explanation: str | None,
         db: AsyncSession,
+        image_url: str | None = None,
     ) -> Question:
         q = Question(
             topic_id=topic_id,
@@ -74,6 +75,7 @@ class QuestionRepository:
             correct_option=correct_option,
             difficulty=difficulty,
             explanation=explanation,
+            image_url=image_url,
         )
         db.add(q)
         await db.commit()

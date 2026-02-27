@@ -79,9 +79,16 @@ async def _show_mistake(callback: CallbackQuery, topic_id: int | None, db, send_
     text = f"❌ <b>Ошибка</b>\n\n{question.text}"
     markup = mistake_answer_keyboard(question.get_options())
     if send_new:
-        await callback.message.answer(text, reply_markup=markup, parse_mode="HTML")
+        if question.image_url:
+            await callback.message.answer_photo(photo=question.image_url, caption=text, reply_markup=markup, parse_mode="HTML")
+        else:
+            await callback.message.answer(text, reply_markup=markup, parse_mode="HTML")
     else:
-        await callback.message.edit_text(text, reply_markup=markup, parse_mode="HTML")
+        if question.image_url:
+            await callback.message.delete()
+            await callback.message.answer_photo(photo=question.image_url, caption=text, reply_markup=markup, parse_mode="HTML")
+        else:
+            await callback.message.edit_text(text, reply_markup=markup, parse_mode="HTML")
 
 
 @router.callback_query(F.data == "mis_all")
