@@ -97,8 +97,10 @@ async def update_accuracy(user_id: int, db: AsyncSession) -> float:
 
 def get_xp_bar(xp: int, bar_length: int = 10) -> str:
     """Returns visual XP progress bar like: ████████░░"""
+    if xp >= 600:
+        return "█" * bar_length
     _, current, needed = _xp_to_next_level(xp)
-    filled = int(bar_length * current / max(needed, 1))
+    filled = min(int(bar_length * current / max(needed, 1)), bar_length)
     return "█" * filled + "░" * (bar_length - filled)
 
 
