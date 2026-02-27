@@ -92,16 +92,47 @@ async def add_topic_title(message: Message, state: FSMContext):
 
 
 @router.message(AddTopicFSM.waiting_theory)
-async def add_topic_theory(message: Message, state: FSMContext, db):
+async def add_topic_theory(message: Message, state: FSMContext):
     if message.text == "❌ Отмена":
         await state.clear()
         await message.answer("Отменено.")
         return
-    data = await state.get_data()
+    
     theory = None if message.text.strip() == "-" else message.text.strip()
-    topic = await TopicRepository.create(data["title"], theory or "", db)
+    await state.update_data(theory=theory)
+    await state.set_state(AddTopicFSM.waiting_image)
+    await message.answer(
+        "🖼 прикрепите <b>картинку</b> (отправьте фото) или отправьте «-» чтобы пропустить:",
+        parse_mode="HTML",
+    )
+
+
+@router.message(AddTopicFSM.waiting_image)
+async def add_topic_image(message: Message, state: FSMContext, db):
+    if message.text == "❌ Отмена":
+        await state.clear()
+        await message.answer("Отменено.")
+        return
+
+    data = await state.get_data()
+    file_id = None
+
+    if message.photo:
+        file_id = message.photo[-1].file_id
+    elif message.text and message.text.strip() == "-":
+        pass
+    else:
+        await message.answer("❌ Пожалуйста, отправьте фото или отправьте «-» чтобы пропустить.")
+        return
+
+    topic = await TopicRepository.create(
+        title=data["title"], 
+        theory_text=data.get("theory") or "", 
+        db=db,
+        image_url=file_id
+    )
     await state.clear()
-    logger.info(f"[HANDLER:admin] Topic created: id={topic.id} title={topic.title!r}")
+    logger.info(f"[HANDLER:admin] Topic created: id={topic.id} title={topic.title!r} has_image={bool(file_id)}")
     await message.answer(f"✅ Тема <b>{topic.title}</b> добавлена (id={topic.id})", parse_mode="HTML")
 
 
@@ -157,7 +188,7 @@ async def admin_edit_topic_title(message: Message, state: FSMContext, db):
     topic = await TopicRepository.get(topic_id, db)
 
     new_title = topic.title if message.text.strip() == "-" else message.text.strip()
-    await state.update_data(new_title=new_title)
+    await state.update_data(new_title=new_title, current_theory=topic.theory_text)
     await state.set_state(EditTopicFSM.waiting_new_theory)
 
     current_theory = topic.theory_text or "(пусто)"
@@ -170,7 +201,25 @@ async def admin_edit_topic_title(message: Message, state: FSMContext, db):
 
 
 @router.message(EditTopicFSM.waiting_new_theory)
-async def admin_edit_topic_theory(message: Message, state: FSMContext, db):
+async def admin_edit_topic_theory(message: Message, state: FSMContext):
+    if message.text == "❌ Отмена":
+        await state.clear()
+        await message.answer("Отменено.")
+        return
+
+    data = await state.get_data()
+    new_theory = data.get("current_theory") if message.text.strip() == "-" else message.text.strip()
+    await state.update_data(new_theory=new_theory)
+    
+    await state.set_state(EditTopicFSM.waiting_new_image)
+    await message.answer(
+        "🖼 <b>Картинка:</b> Отправьте новое фото для замены, или нажмите «-» чтобы оставить текущую (или удалить, прислав текст 'Удалить'):",
+        parse_mode="HTML",
+    )
+
+
+@router.message(EditTopicFSM.waiting_new_image)
+async def admin_edit_topic_image(message: Message, state: FSMContext, db):
     if message.text == "❌ Отмена":
         await state.clear()
         await message.answer("Отменено.")
@@ -179,11 +228,32 @@ async def admin_edit_topic_theory(message: Message, state: FSMContext, db):
     data = await state.get_data()
     topic_id = data["edit_topic_id"]
     new_title = data["new_title"]
+    new_theory = data["new_theory"]
+    
     topic = await TopicRepository.get(topic_id, db)
+    if not topic:
+        await state.clear()
+        return
 
-    new_theory = topic.theory_text if message.text.strip() == "-" else message.text.strip()
+    # Handle image
+    new_image_url = topic.image_url
+    if message.photo:
+        new_image_url = message.photo[-1].file_id
+    elif message.text and message.text.strip().lower() == "удалить":
+        new_image_url = None
+    elif message.text and message.text.strip() == "-":
+        pass  # Keep old picture
+    else:
+        await message.answer("❌ Пожалуйста, отправьте фото, «-» для сохранения или «Удалить» для удаления картинки.")
+        return
 
-    updated = await TopicRepository.update(topic_id, db, title=new_title, theory_text=new_theory)
+    updated = await TopicRepository.update(
+        topic_id, 
+        db, 
+        title=new_title, 
+        theory_text=new_theory,
+        image_url=new_image_url
+    )
     await state.clear()
 
     logger.info(f"[HANDLER:admin] Topic updated: id={topic_id} title={new_title!r}")
@@ -316,13 +386,38 @@ async def aq_explanation(message: Message, state: FSMContext):
 
 
 @router.message(AddQuestionFSM.waiting_difficulty)
-async def aq_difficulty(message: Message, state: FSMContext, db):
+async def aq_difficulty(message: Message, state: FSMContext):
     text = message.text.strip()
     if text not in ("1", "2", "3"):
         await message.answer("❌ Введи 1, 2 или 3")
         return
 
+    await state.update_data(difficulty=int(text))
+    await state.set_state(AddQuestionFSM.waiting_image)
+    await message.answer(
+        "🖼 прикрепите <b>картинку</b> (отправьте фото) или отправьте «-» чтобы пропустить:",
+        parse_mode="HTML",
+    )
+
+
+@router.message(AddQuestionFSM.waiting_image)
+async def aq_image(message: Message, state: FSMContext, db):
+    if message.text == "❌ Отмена":
+        await state.clear()
+        await message.answer("Отменено.")
+        return
+
     data = await state.get_data()
+    file_id = None
+
+    if message.photo:
+        file_id = message.photo[-1].file_id
+    elif message.text and message.text.strip() == "-":
+        pass
+    else:
+        await message.answer("❌ Пожалуйста, отправьте фото или отправьте «-» чтобы пропустить.")
+        return
+
     topic_id = data.get("topic_id")
 
     if not topic_id:
@@ -342,10 +437,11 @@ async def aq_difficulty(message: Message, state: FSMContext, db):
         option_c=data["option_c"],
         option_d=data["option_d"],
         correct_option=data["correct_option"],
-        difficulty=int(text),
+        difficulty=data["difficulty"],
         explanation=data.get("explanation"),
+        image_url=file_id,
         db=db,
     )
     await state.clear()
-    logger.info(f"[HANDLER:admin] Question created id={q.id} topic={topic_id}")
+    logger.info(f"[HANDLER:admin] Question created id={q.id} topic={topic_id} has_image={bool(file_id)}")
     await message.answer(f"✅ Вопрос добавлен (id={q.id})")
