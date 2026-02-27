@@ -17,6 +17,7 @@ from bot.keyboards.admin_kb import (
 )
 from repositories.question_repo import QuestionRepository
 from repositories.topic_repo import TopicRepository
+from bot.utils import safe_edit_text
 
 router = Router()
 
@@ -33,7 +34,7 @@ async def admin_topics(callback: CallbackQuery, db):
         await callback.answer("⛔", show_alert=True)
         return
     topics = await TopicRepository.get_all(db)
-    await callback.message.edit_text(
+    await safe_edit_text(callback.message, 
         "📚 <b>Управление темами</b>",
         reply_markup=admin_topics_keyboard(topics),
         parse_mode="HTML",
@@ -54,7 +55,7 @@ async def admin_topic_detail(callback: CallbackQuery, db):
         f"Вопросов: {len(questions)}\n"
         f"Статус: {'✅ Активна' if topic.is_active else '❌ Скрыта'}"
     )
-    await callback.message.edit_text(
+    await safe_edit_text(callback.message, 
         text, reply_markup=admin_topic_actions_keyboard(topic_id), parse_mode="HTML"
     )
     await callback.answer()
@@ -145,9 +146,9 @@ async def admin_delete_topic(callback: CallbackQuery, db):
     deleted = await TopicRepository.delete(topic_id, db)
     if deleted:
         logger.info(f"[HANDLER:admin] Topic deleted: id={topic_id}")
-        await callback.message.edit_text(f"🗑️ Тема id={topic_id} удалена.")
+        await safe_edit_text(callback.message, f"🗑️ Тема id={topic_id} удалена.")
     else:
-        await callback.message.edit_text("❌ Тема не найдена.")
+        await safe_edit_text(callback.message, "❌ Тема не найдена.")
     await callback.answer()
 
 
@@ -271,7 +272,7 @@ async def admin_questions(callback: CallbackQuery, db):
         await callback.answer("⛔", show_alert=True)
         return
     topics = await TopicRepository.get_all(db)
-    await callback.message.edit_text(
+    await safe_edit_text(callback.message, 
         "❓ <b>Управление вопросами</b>\n\nВыберите тему:",
         reply_markup=admin_questions_keyboard(topics),
         parse_mode="HTML",
@@ -303,7 +304,7 @@ async def admin_questions_topic(callback: CallbackQuery, db):
         [InlineKeyboardButton(text="🔙 Назад", callback_data="admin_questions")]
     ])
     
-    await callback.message.edit_text(text, reply_markup=kb, parse_mode="HTML")
+    await safe_edit_text(callback.message, text, reply_markup=kb, parse_mode="HTML")
     await callback.answer()
 
 

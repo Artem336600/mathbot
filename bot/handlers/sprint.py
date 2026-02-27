@@ -13,6 +13,7 @@ from repositories.question_repo import QuestionRepository
 from services import session_service, stats_service
 from services.mistake_service import add_mistake
 from services.question_service import get_sprint_questions
+from bot.utils import safe_edit_text
 
 router = Router()
 
@@ -28,7 +29,7 @@ SPRINT_INTRO_TEXT = (
 @router.callback_query(F.data == "sprint_start")
 async def sprint_start(callback: CallbackQuery):
     logger.info(f"[HANDLER:sprint] User {callback.from_user.id} opened sprint intro")
-    await callback.message.edit_text(
+    await safe_edit_text(callback.message, 
         SPRINT_INTRO_TEXT,
         reply_markup=sprint_intro_keyboard(),
         parse_mode="HTML",
@@ -44,7 +45,7 @@ async def sprint_go(callback: CallbackQuery, db, user):
     # Get question IDs
     question_ids = await get_sprint_questions(topic_ids=None, db=db)
     if not question_ids:
-        await callback.message.edit_text("😔 Не удалось загрузить вопросы. Попробуйте позже.")
+        await safe_edit_text(callback.message, "😔 Не удалось загрузить вопросы. Попробуйте позже.")
         await callback.answer()
         return
 
@@ -130,7 +131,7 @@ async def sprint_answer(callback: CallbackQuery, db, user):
                 caption=result_text, reply_markup=sprint_result_keyboard(), parse_mode="HTML"
             )
         else:
-            await callback.message.edit_text(
+            await safe_edit_text(callback.message, 
                 result_text, reply_markup=sprint_result_keyboard(), parse_mode="HTML"
             )
     else:
@@ -142,7 +143,7 @@ async def sprint_answer(callback: CallbackQuery, db, user):
                 parse_mode="HTML",
             )
         else:
-            await callback.message.edit_text(
+            await safe_edit_text(callback.message, 
                 feedback,
                 parse_mode="HTML",
             )
@@ -157,7 +158,7 @@ async def sprint_menu(callback: CallbackQuery):
     logger.debug(f"[HANDLER:sprint] User {uid} exited sprint to menu")
     await session_service.delete_session(uid, "sprint")
     from bot.keyboards.main_menu import main_menu_keyboard
-    await callback.message.edit_text(
+    await safe_edit_text(callback.message, 
         "📋 <b>Главное меню</b>", reply_markup=main_menu_keyboard(), parse_mode="HTML"
     )
     await callback.answer()
@@ -196,7 +197,7 @@ async def _show_sprint_question(callback: CallbackQuery, session: dict, db) -> N
             parse_mode="HTML"
         )
     else:
-        await callback.message.edit_text(
+        await safe_edit_text(callback.message, 
             text,
             reply_markup=markup,
             parse_mode="HTML",

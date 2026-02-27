@@ -7,6 +7,7 @@ from loguru import logger
 from bot.keyboards.main_menu import main_menu_keyboard
 from bot.keyboards.reply import main_reply_keyboard
 from services import user_service
+from bot.utils import safe_edit_text
 
 router = Router()
 
@@ -51,7 +52,7 @@ async def cmd_menu_reply(message: Message):
 @router.callback_query(F.data == "main_menu")
 async def callback_main_menu(callback: CallbackQuery):
     logger.debug(f"[HANDLER:start] main_menu callback from {callback.from_user.id}")
-    await callback.message.edit_text(
+    await safe_edit_text(callback.message, 
         "📋 <b>Главное меню</b>",
         reply_markup=main_menu_keyboard(),
         parse_mode="HTML",

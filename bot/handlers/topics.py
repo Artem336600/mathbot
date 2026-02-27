@@ -18,6 +18,7 @@ from repositories.question_repo import QuestionRepository
 from repositories.topic_repo import TopicRepository
 from services import session_service, stats_service
 from services.mistake_service import add_mistake
+from bot.utils import safe_edit_text
 
 router = Router()
 
@@ -26,7 +27,7 @@ router = Router()
 async def topics_list(callback: CallbackQuery, db):
     logger.debug(f"[HANDLER:topics] User {callback.from_user.id} opened topics list")
     topics = await TopicRepository.get_all(db)
-    await callback.message.edit_text(
+    await safe_edit_text(callback.message, 
         "📚 <b>Каталог тем</b>\n\nВыбери тему для изучения:",
         reply_markup=topics_list_keyboard(topics),
         parse_mode="HTML",
@@ -54,7 +55,7 @@ async def topic_card(callback: CallbackQuery, db):
         f"📊 Задач: {len(questions)} "
         f"(🟢{easy} 🟡{medium} 🔴{hard})"
     )
-    await callback.message.edit_text(
+    await safe_edit_text(callback.message, 
         text, reply_markup=topic_card_keyboard(topic_id), parse_mode="HTML"
     )
     await callback.answer()
@@ -81,7 +82,7 @@ async def topic_theory(callback: CallbackQuery, db):
             parse_mode="HTML"
         )
     else:
-        await callback.message.edit_text(
+        await safe_edit_text(callback.message, 
             text,
             reply_markup=markup,
             parse_mode="HTML",
@@ -103,7 +104,7 @@ async def topic_tasks(callback: CallbackQuery, db):
         f"total={len(questions)} solved={len(solved_ids)} user={uid}"
     )
 
-    await callback.message.edit_text(
+    await safe_edit_text(callback.message, 
         f"📝 <b>{topic.title if topic else 'Тема'}</b> — Задачи\n\n"
         f"Решено: {len(solved_ids)}/{len(questions)}",
         reply_markup=tasks_list_keyboard(questions, solved_ids, topic_id),
@@ -142,7 +143,7 @@ async def solve_question(callback: CallbackQuery, db):
             parse_mode="HTML"
         )
     else:
-        await callback.message.edit_text(
+        await safe_edit_text(callback.message, 
             text,
             reply_markup=markup,
             parse_mode="HTML",
@@ -193,7 +194,7 @@ async def topic_answer(callback: CallbackQuery, db, user):
             parse_mode="HTML",
         )
     else:
-        await callback.message.edit_text(
+        await safe_edit_text(callback.message, 
             feedback,
             reply_markup=markup,
             parse_mode="HTML",
@@ -236,7 +237,7 @@ async def topic_next(callback: CallbackQuery, db):
             parse_mode="HTML"
         )
     else:
-        await callback.message.edit_text(
+        await safe_edit_text(callback.message, 
             text,
             reply_markup=markup,
             parse_mode="HTML",

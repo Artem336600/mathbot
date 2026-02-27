@@ -18,6 +18,7 @@ from repositories.topic_repo import TopicRepository
 from services import session_service, stats_service
 from services.mistake_service import add_mistake
 from services.question_service import get_next_training_question
+from bot.utils import safe_edit_text
 
 router = Router()
 
@@ -29,7 +30,7 @@ async def training_start(callback: CallbackQuery, db):
 
     topics = await TopicRepository.get_all(db)
     if not topics:
-        await callback.message.edit_text("😔 Темы не найдены. Обратитесь к администратору.")
+        await safe_edit_text(callback.message, "😔 Темы не найдены. Обратитесь к администратору.")
         await callback.answer()
         return
 
@@ -39,7 +40,7 @@ async def training_start(callback: CallbackQuery, db):
     # Store selection temp in Redis
     await session_service.set_temp(uid, "train_topics", {"selected": all_ids})
 
-    await callback.message.edit_text(
+    await safe_edit_text(callback.message, 
         "🏋️ <b>Режим Тренировка</b>\n\n"
         "Выберите темы для тренировки. Сложность адаптируется под твои ответы.\n\n"
         "📌 Выбраны все темы. Нажми на тему, чтобы убрать её.",
@@ -92,7 +93,7 @@ async def training_begin(callback: CallbackQuery, db):
     # Get first question
     question = await get_next_training_question(session, db)
     if not question:
-        await callback.message.edit_text("😔 Нет доступных вопросов для выбранных тем.")
+        await safe_edit_text(callback.message, "😔 Нет доступных вопросов для выбранных тем.")
         await callback.answer()
         return
 
@@ -114,7 +115,7 @@ async def training_begin(callback: CallbackQuery, db):
             parse_mode="HTML"
         )
     else:
-        await callback.message.edit_text(
+        await safe_edit_text(callback.message, 
             text,
             reply_markup=markup,
             parse_mode="HTML",
@@ -181,7 +182,7 @@ async def training_answer(callback: CallbackQuery, db, user):
     question = await get_next_training_question(session, db)
     if not question:
         await session_service.delete_session(uid, "training")
-        await callback.message.edit_text(
+        await safe_edit_text(callback.message, 
             f"{feedback}\n\n😔 Вопросы закончились.",
             reply_markup=training_summary_keyboard(),
             parse_mode="HTML",
@@ -195,7 +196,7 @@ async def training_answer(callback: CallbackQuery, db, user):
     if question.image_url:
         await callback.message.edit_caption(caption=feedback, parse_mode="HTML")
     else:
-        await callback.message.edit_text(feedback, parse_mode="HTML")
+        await safe_edit_text(callback.message, feedback, parse_mode="HTML")
         
     next_text = (
         f"🏋️ <b>Тренировка</b> | #{session['solved_count'] + 1} | "
@@ -238,7 +239,7 @@ async def training_stop(callback: CallbackQuery, db, user):
         f"✅ Решено вопросов: <b>{solved}</b>\n"
         f"⭐ XP заработано: <b>{xp}</b>"
     )
-    await callback.message.edit_text(
+    await safe_edit_text(callback.message, 
         text, reply_markup=training_summary_keyboard(), parse_mode="HTML"
     )
     await callback.answer()

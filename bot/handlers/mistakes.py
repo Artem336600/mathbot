@@ -16,6 +16,7 @@ from repositories.question_repo import QuestionRepository
 from repositories.topic_repo import TopicRepository
 from services import session_service, stats_service
 from services.mistake_service import fix_mistake, get_random_mistake
+from bot.utils import safe_edit_text
 
 router = Router()
 
@@ -27,7 +28,7 @@ async def mistakes_menu(callback: CallbackQuery, db):
     logger.info(f"[HANDLER:mistakes] mistakes count={count} user={uid}")
 
     if count == 0:
-        await callback.message.edit_text(
+        await safe_edit_text(callback.message, 
             "🎉 <b>Отлично!</b>\n\nУ тебя нет нерешённых ошибок. Молодец!",
             reply_markup=mistakes_empty_keyboard(),
             parse_mode="HTML",
@@ -43,7 +44,7 @@ async def mistakes_menu(callback: CallbackQuery, db):
         if topic:
             topics.append(topic)
 
-    await callback.message.edit_text(
+    await safe_edit_text(callback.message, 
         f"❌ <b>Работа над ошибками</b>\n\n"
         f"Нерешённых ошибок: <b>{count}</b>\n\n"
         f"Выбери режим:",
@@ -63,7 +64,7 @@ async def _show_mistake(callback: CallbackQuery, topic_id: int | None, db, send_
         if send_new:
             await callback.message.answer(text, reply_markup=mistakes_empty_keyboard(), parse_mode="HTML")
         else:
-            await callback.message.edit_text(text, reply_markup=mistakes_empty_keyboard(), parse_mode="HTML")
+            await safe_edit_text(callback.message, text, reply_markup=mistakes_empty_keyboard(), parse_mode="HTML")
         return
 
     question = await QuestionRepository.get_by_id(mistake.question_id, db)
@@ -89,7 +90,7 @@ async def _show_mistake(callback: CallbackQuery, topic_id: int | None, db, send_
             await callback.message.delete()
             await callback.message.answer_photo(photo=question.image_url, caption=text, reply_markup=markup, parse_mode="HTML")
         else:
-            await callback.message.edit_text(text, reply_markup=markup, parse_mode="HTML")
+            await safe_edit_text(callback.message, text, reply_markup=markup, parse_mode="HTML")
 
 
 @router.callback_query(F.data == "mis_all")
@@ -147,7 +148,7 @@ async def mistake_answer(callback: CallbackQuery, db, user):
     if question.image_url:
         await callback.message.edit_caption(caption=feedback, parse_mode="HTML")
     else:
-        await callback.message.edit_text(feedback, parse_mode="HTML")
+        await safe_edit_text(callback.message, feedback, parse_mode="HTML")
 
     # Check remaining mistakes logic is handled by _show_mistake
     # We send the next mistake as a NEW message, so the feedback above stays in chat

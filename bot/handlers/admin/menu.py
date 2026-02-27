@@ -6,6 +6,7 @@ from loguru import logger
 
 from bot.config import settings
 from bot.keyboards.admin_kb import admin_menu_keyboard
+from bot.utils import safe_edit_text
 
 router = Router()
 
@@ -37,7 +38,7 @@ async def admin_menu_callback(callback: CallbackQuery):
         await callback.answer("⛔ Нет доступа.", show_alert=True)
         return
 
-    await callback.message.edit_text(
+    await safe_edit_text(callback.message, 
         "🔧 <b>Админ-панель MathTrainer</b>\n\nВыберите действие:",
         reply_markup=admin_menu_keyboard(),
         parse_mode="HTML",
@@ -61,7 +62,7 @@ async def admin_users_callback(callback: CallbackQuery, db):
         [InlineKeyboardButton(text="🔙 Назад", callback_data="admin_menu")]
     ])
 
-    await callback.message.edit_text(
+    await safe_edit_text(callback.message, 
         f"👥 <b>Статистика пользователей</b>\n\n"
         f"🌟 Активных пользователей: <b>{len(active_user_ids)}</b>\n\n"
         f"<i>(Детальная аналитика в разработке)</i>",

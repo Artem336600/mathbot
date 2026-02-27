@@ -12,6 +12,7 @@ from bot.config import settings
 from bot.fsm.admin import BroadcastFSM
 from bot.keyboards.admin_kb import cancel_keyboard, confirm_broadcast_keyboard
 from services.broadcast_service import send_to_all
+from bot.utils import safe_edit_text
 
 router = Router()
 
@@ -74,7 +75,7 @@ async def broadcast_confirm(callback: CallbackQuery, state: FSMContext, db, bot:
     await state.clear()
 
     logger.info(f"[HANDLER:admin] Broadcast started by {callback.from_user.id}")
-    await callback.message.edit_text("📤 Рассылка началась... Подождите.")
+    await safe_edit_text(callback.message, "📤 Рассылка началась... Подождите.")
 
     result = await send_to_all(text, bot, db)
 
@@ -91,5 +92,5 @@ async def broadcast_confirm(callback: CallbackQuery, state: FSMContext, db, bot:
 @router.callback_query(F.data == "broadcast_cancel")
 async def broadcast_cancel(callback: CallbackQuery, state: FSMContext):
     await state.clear()
-    await callback.message.edit_text("❌ Рассылка отменена.")
+    await safe_edit_text(callback.message, "❌ Рассылка отменена.")
     await callback.answer()
