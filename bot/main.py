@@ -55,11 +55,17 @@ async def on_startup(bot: Bot) -> None:
 
     # Run DB migrations
     try:
-        from alembic.config import Config
-        from alembic import command
-        alembic_cfg = Config("alembic.ini")
-        command.upgrade(alembic_cfg, "head")
-        logger.info("[BOOT] DB migrated to head")
+        import asyncio
+        process = await asyncio.create_subprocess_exec(
+            "alembic", "upgrade", "head",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await process.communicate()
+        if process.returncode == 0:
+            logger.info("[BOOT] DB migrated to head")
+        else:
+            logger.error(f"[BOOT] Alembic migration failed. Code {process.returncode}:\n{stderr.decode()}")
     except Exception as e:
         logger.error(f"[BOOT] Alembic migration failed: {e}")
 
