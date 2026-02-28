@@ -1,0 +1,41 @@
+import pytest
+from unittest.mock import AsyncMock
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from db.models import Base
+
+# Use in-memory SQLite for testing
+TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+test_engine = create_async_engine(
+    TEST_DATABASE_URL,
+    echo=False,
+    pool_pre_ping=True,
+)
+
+test_session_factory = async_sessionmaker(
+    test_engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+)
+
+@pytest.fixture(scope="function")
+async def db_engine():
+    """Create a new database engine and tables for each test."""
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield test_engine
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+
+@pytest.fixture(scope="function")
+async def db(db_engine) -> AsyncSession:
+    """Provide a new session for each test."""
+    async with test_session_factory() as session:
+        yield session
+
+@pytest.fixture(scope="function")
+def mock_redis(mocker):
+    """Mock Redis session service calls."""
+    mock_pool = mocker.patch("bot.utils.get_redis_pool", new_callable=AsyncMock)
+    return mock_pool
