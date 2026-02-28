@@ -1,12 +1,10 @@
 """Broadcast API for Admin Dashboard (US-011)."""
 import json
-import asyncio
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram import Bot
 import redis.asyncio as aioredis
 
-from webapp.auth import get_admin_user, get_db_session
+from webapp.auth import get_admin_user
 from db.models import User
 from db.session import async_session_factory
 from webapp.schemas import BroadcastRequest, BroadcastResponse

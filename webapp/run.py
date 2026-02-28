@@ -1,5 +1,4 @@
 """FastAPI startup runner to integrate with asyncio loop."""
-import asyncio
 from loguru import logger
 import uvicorn
 from bot.config import settings

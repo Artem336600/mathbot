@@ -38,12 +38,12 @@
 
 ### Phase 4: Tests
 
-- [ ] Task 15: conftest + auth tests
-- [ ] Task 16: topics + questions tests
-- [ ] Task 17: users + broadcast tests
+- [x] Task 15: conftest + auth tests
+- [x] Task 16: topics + questions tests
+- [x] Task 17: users + broadcast tests
 
 ### Phase 5: Docs
 
-- [ ] Task 18: README update
-- [ ] Task 19: DESCRIPTION update
-- [ ] Task 20: .env.example update
+- [x] Task 18: Update architecture map
+- [x] Task 19: Update features in `.ai-factory/DESCRIPTION.md`
+- [x] Task 20: Add run instructions for webapp to `README.md`

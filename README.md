@@ -9,7 +9,7 @@ Telegram-бот для тренировки математики на Python/Aio
 - 📚 **Каталог тем** — теория + задачи с маркерами прогресса
 - ❌ **Ошибки** — работа над неверными ответами, +5 XP за исправление
 - 👤 **Профиль** — XP bar, уровни, серия, точность
-- 🔧 **Админка** — управление темами/вопросами, рассылка
+- 🔧 **Админка (Mini App)** — управление темами/вопросами (импорт JSON), бан пользователей, статистика, рассылка через FastAPI Dashboard
 
 ## Требования
 
@@ -56,6 +56,7 @@ docker-compose up -d bot
 |-----------|------------|
 | Язык | Python 3.12 |
 | Бот | Aiogram 3 |
+| Админка | FastAPI, Telegram WebApp (SPA - HTML/JS/CSS) |
 | БД | PostgreSQL 16 |
 | ORM | SQLAlchemy 2 (async) |
 | Миграции | Alembic |
@@ -89,6 +90,12 @@ mathtrainer/
 │   └── migrations/        # Alembic миграции
 ├── data/
 │   └── seed.py            # Начальные данные
+├── webapp/              # FastAPI админ-панель (Telegram Mini App)
+│   ├── routers/           # API Endpoints (статистика, топики, пользователи)
+│   ├── static/            # Frontend SPA (Vanilla JS + CSS)
+│   ├── main.py            # FastAPI приложение
+│   ├── auth.py            # Валидация initData
+│   └── run.py             # Асинхронный запуск uvicorn
 ├── docker-compose.yml
 ├── Dockerfile
 └── requirements.txt

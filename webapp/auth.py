@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import json
 from urllib.parse import parse_qsl
-from fastapi import Request, HTTPException, Security, Depends
+from fastapi import HTTPException, Security, Depends
 from fastapi.security import APIKeyHeader
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -56,10 +56,11 @@ async def get_admin_user(
     """FastAPI Dependency to get current admin user from Telegram initData."""
     if not init_data:
         # Check if auth bypass is allowed for tests/local dev (remove in real prod)
-        if settings.log_level == "DEBUG" and "dev_user=" in init_data:
-            pass # we could add dev mock here, but let's stick to strict validation
         logger.warning("[WEBAPP:AUTH] No X-Init-Data header")
         raise HTTPException(status_code=401, detail="Unauthorized - Missing X-Init-Data header")
+
+    if settings.log_level == "DEBUG" and "dev_user=" in init_data:
+        pass # we could add dev mock here, but let's stick to strict validation
 
     # In dev mode we might allow a stub payload for easier testing in the browser
     if init_data.startswith("test_dev="):

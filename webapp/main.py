@@ -1,8 +1,12 @@
 """Main FastAPI application for Admin Mini App."""
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
+
+from webapp.routers import stats, topics, questions, users, broadcast
 
 app = FastAPI(
     title="MathTrainer Admin WebApp API",
@@ -30,7 +34,7 @@ async def log_requests(request, call_next):
     return response
 
 # Mount static files
-import os
+# Mount static files
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(STATIC_DIR):
     # Only mount if exists to avoid startup crash before we create it in Phase 2
@@ -39,8 +43,6 @@ if os.path.exists(STATIC_DIR):
 @app.get("/api/health")
 async def health_check():
     return {"status": "ok"}
-
-from webapp.routers import stats, topics, questions, users, broadcast
 app.include_router(stats.router)
 app.include_router(topics.router)
 app.include_router(questions.router)

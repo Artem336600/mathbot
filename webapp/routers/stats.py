@@ -1,11 +1,11 @@
 """Stats router for Admin Dashboard."""
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
 from webapp.auth import get_admin_user, get_db_session
-from db.models import User, Topic, Question, UserProgress
+from db.models import User, Question, UserProgress
 from repositories.user_repo import UserRepository
 from repositories.topic_repo import TopicRepository
 from loguru import logger

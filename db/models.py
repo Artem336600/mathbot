@@ -52,7 +52,7 @@ class Topic(Base):
     image_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    questions: Mapped[list["Question"]] = relationship(back_populates="topic")
+    questions: Mapped[list["Question"]] = relationship(back_populates="topic", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Topic id={self.id} title={self.title!r}>"

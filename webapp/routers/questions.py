@@ -1,6 +1,6 @@
 """Questions CRUD API for Admin Dashboard."""
 import json
-from typing import List, Optional
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import ValidationError
