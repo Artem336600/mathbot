@@ -173,8 +173,6 @@ const app = {
         window.addEventListener('hashchange', app.onHashChange);
 
         // Setup UI bindings
-        document.getElementById("btn-close").addEventListener("click", () => tg.close());
-
         const sbToggle = document.getElementById("sidebar-toggle");
         const sidebar = document.querySelector(".sidebar");
         const overlay = document.getElementById("sidebar-overlay");

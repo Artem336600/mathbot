@@ -7,30 +7,45 @@ window.svgAnim = {
      * Animated Logo: subtle pulse + drawing effect on load
      */
     logo: (size = 32) => `
-        <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="url(#logo-gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: logo-pulse 3s infinite ease-in-out;">
+        <svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
-                <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#6366f1" />
-                    <stop offset="100%" stop-color="#8b5cf6" />
+                <linearGradient id="logoG1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#8b5cf6" />
+                    <stop offset="100%" stop-color="#6366f1" />
                 </linearGradient>
+                <linearGradient id="logoG2" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#a855f7" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.2" />
+                </linearGradient>
+                <filter id="logoGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
             </defs>
-            <rect x="4" y="2" width="16" height="20" rx="2" ry="2" stroke-dasharray="80" stroke-dashoffset="80">
-                <animate attributeName="stroke-dashoffset" values="80;0" dur="1s" fill="freeze" />
-            </rect>
-            <line x1="8" y1="6" x2="16" y2="6" stroke-dasharray="8" stroke-dashoffset="8">
-                <animate attributeName="stroke-dashoffset" values="8;0" dur="0.5s" begin="0.5s" fill="freeze" />
-            </line>
-            <circle cx="9" cy="14" r="1.5" fill="var(--c-accent)" />
-            <circle cx="15" cy="14" r="1.5" fill="var(--c-accent)" />
-            <circle cx="12" cy="17" r="1.5" fill="var(--c-accent-2)" />
-            <style>
-                @keyframes logo-pulse {
-                    0% { filter: drop-shadow(0 0 2px rgba(99, 102, 241, 0.2)); transform: scale(1); }
-                    50% { filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6)); transform: scale(1.05); }
-                    100% { filter: drop-shadow(0 0 2px rgba(99, 102, 241, 0.2)); transform: scale(1); }
-                }
-            </style>
+            <g style="animation: logoFloat 4s ease-in-out infinite;">
+                <!-- Glowing Core -->
+                <circle cx="16" cy="16" r="8" fill="url(#logoG1)" filter="url(#logoGlow)" style="animation: logoPulse 2s ease-in-out infinite alternate; opacity: 0.6;" />
+                
+                <!-- Hexagon Base -->
+                <path d="M16 2L28 9V23L16 30L4 23V9L16 2Z" stroke="url(#logoG1)" stroke-width="2" stroke-linejoin="round" fill="url(#logoG2)"
+                    style="stroke-dasharray: 100; stroke-dashoffset: 100; animation: logoDraw 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;" />
+                
+                <!-- Math/Infinity Nodes intersecting -->
+                <path d="M16 2L16 16L28 23" stroke="url(#logoG1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="stroke-dasharray: 40; stroke-dashoffset: 40; animation: logoDraw 1s ease 0.6s forwards;" />
+                <path d="M4 23L16 16L4 9" stroke="url(#logoG1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="stroke-dasharray: 40; stroke-dashoffset: 40; animation: logoDraw 1s ease 0.8s forwards;" />
+                
+                <!-- Center Node -->
+                <circle cx="16" cy="16" r="3" fill="#ffffff" style="opacity:0; animation: logoFadeIn 0.8s ease 1.2s forwards;" />
+            </g>
         </svg>
+        <style>
+            @keyframes logoDraw { to { stroke-dashoffset: 0; } }
+            @keyframes logoFadeIn { to { opacity: 1; filter: drop-shadow(0 0 5px rgba(255,255,255,0.8)); } }
+            @keyframes logoFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+            @keyframes logoPulse { 0% { opacity: 0.4; transform: scale(0.9); transform-origin: center; } 100% { opacity: 0.8; transform: scale(1.1); transform-origin: center; } }
+        </style>
     `,
 
     /**
