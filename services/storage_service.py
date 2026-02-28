@@ -53,6 +53,17 @@ class StorageService:
             return False
 
     @staticmethod
+    async def get_file(file_key: str) -> bytes | None:
+        try:
+            session = StorageService._get_session()
+            async with session.client(**StorageService._client_kwargs()) as s3:
+                resp = await s3.get_object(Bucket=settings.s3_bucket_name, Key=file_key)
+                return await resp['Body'].read()
+        except Exception as e:
+            logger.error(f"[STORAGE] get_file failed key={file_key}: {e}")
+            return None
+
+    @staticmethod
     async def get_presigned_url(file_key: str, expires: int = 3600) -> str:
         try:
             session = StorageService._get_session()

@@ -5,7 +5,7 @@ question_id stored in Redis temp (topics_session:{user_id}), NOT in callback.
 import random
 
 from aiogram import F, Router
-from aiogram.types import CallbackQuery, InputMediaPhoto
+from aiogram.types import BufferedInputFile, CallbackQuery, InputMediaPhoto
 from loguru import logger
 
 from bot.keyboards.topics import (
@@ -29,6 +29,15 @@ router = Router()
 TELEGRAM_MEDIA_GROUP_LIMIT = 10
 
 
+async def _get_photo_media(file_key: str, filename: str) -> str | BufferedInputFile:
+    url = await StorageService.get_presigned_url(file_key)
+    if any(x in url for x in ["localhost", "127.0.0.1", "minio"]):
+        data = await StorageService.get_file(file_key)
+        if data:
+            return BufferedInputFile(data, filename=filename)
+    return url
+
+
 async def _send_question(callback: CallbackQuery, question, db) -> bool:
     """
     Send a question to the user, including any photo attachments.
@@ -45,17 +54,13 @@ async def _send_question(callback: CallbackQuery, question, db) -> bool:
 
     if len(photos) >= 2:
         # Send as media group — first photo gets caption, rest plain
-        urls = []
-        for p in photos[:TELEGRAM_MEDIA_GROUP_LIMIT]:
-            url = await StorageService.get_presigned_url(p.file_key)
-            urls.append(url)
-
         media = []
-        for i, url in enumerate(urls):
+        for i, p in enumerate(photos[:TELEGRAM_MEDIA_GROUP_LIMIT]):
+            photo_file = await _get_photo_media(p.file_key, p.file_name)
             if i == 0:
-                media.append(InputMediaPhoto(media=url, caption=text, parse_mode="HTML"))
+                media.append(InputMediaPhoto(media=photo_file, caption=text, parse_mode="HTML"))
             else:
-                media.append(InputMediaPhoto(media=url))
+                media.append(InputMediaPhoto(media=photo_file))
 
         try:
             await callback.message.delete()
@@ -75,13 +80,13 @@ async def _send_question(callback: CallbackQuery, question, db) -> bool:
             return False
 
     elif len(photos) == 1:
-        url = await StorageService.get_presigned_url(photos[0].file_key)
+        photo_file = await _get_photo_media(photos[0].file_key, photos[0].file_name)
         try:
             await callback.message.delete()
         except Exception:
             pass
         await callback.message.answer_photo(
-            photo=url,
+            photo=photo_file,
             caption=text,
             reply_markup=markup,
             parse_mode="HTML"
@@ -166,27 +171,22 @@ async def topic_theory(callback: CallbackQuery, db):
     logger.debug(f"[HANDLER:topics] sending theory topic={topic_id}: photos={len(photos)} docs={len(docs)}")
 
     if photos:
-        # Build presigned URLs for all photos
-        photo_urls = []
-        for p in photos:
-            url = await StorageService.get_presigned_url(p.file_key)
-            photo_urls.append(url)
-
         try:
             await callback.message.delete()
         except Exception:
             pass
 
         # Send in batches of 10 (Telegram media group limit)
-        for batch_start in range(0, len(photo_urls), TELEGRAM_MEDIA_GROUP_LIMIT):
-            batch = photo_urls[batch_start:batch_start + TELEGRAM_MEDIA_GROUP_LIMIT]
+        for batch_start in range(0, len(photos), TELEGRAM_MEDIA_GROUP_LIMIT):
+            batch = photos[batch_start:batch_start + TELEGRAM_MEDIA_GROUP_LIMIT]
             media = []
-            for i, url in enumerate(batch):
+            for i, p in enumerate(batch):
+                photo_file = await _get_photo_media(p.file_key, p.file_name)
                 # First photo of the very first batch gets theory text as caption
                 if batch_start == 0 and i == 0:
-                    media.append(InputMediaPhoto(media=url, caption=text, parse_mode="HTML"))
+                    media.append(InputMediaPhoto(media=photo_file, caption=text, parse_mode="HTML"))
                 else:
-                    media.append(InputMediaPhoto(media=url))
+                    media.append(InputMediaPhoto(media=photo_file))
             try:
                 await callback.message.answer_media_group(media=media)
             except Exception as e:
@@ -213,10 +213,10 @@ async def topic_theory(callback: CallbackQuery, db):
 
     # Send documents as separate messages
     for doc_att in docs:
-        doc_url = await StorageService.get_presigned_url(doc_att.file_key)
+        doc_file = await _get_photo_media(doc_att.file_key, doc_att.file_name)
         try:
             await callback.message.answer_document(
-                document=doc_url,
+                document=doc_file,
                 caption=f"📎 {doc_att.file_name}"
             )
         except Exception as e:
@@ -296,11 +296,17 @@ async def topic_answer(callback: CallbackQuery, db, user):
     is_correct = option == question.correct_option
     logger.info(f"[HANDLER:topics] solved q={question_id} correct={is_correct} user={uid}")
 
+    solved_ids = await ProgressRepository.get_solved_ids(uid, topic_id, db)
+    already_solved = question_id in solved_ids
+
     await ProgressRepository.add(uid, question_id, is_correct, db)
 
     if is_correct:
-        await stats_service.award_xp(uid, stats_service.XP_CORRECT, db)
-        feedback = f"✅ <b>Правильно!</b> +{stats_service.XP_CORRECT} XP"
+        if already_solved:
+            feedback = f"✅ <b>Правильно!</b> (уже решено ранее)"
+        else:
+            await stats_service.award_xp(uid, stats_service.XP_CORRECT, db)
+            feedback = f"✅ <b>Правильно!</b> +{stats_service.XP_CORRECT} XP"
     else:
         await add_mistake(uid, question_id, db)
         correct_text = question.get_options()[question.correct_option]
