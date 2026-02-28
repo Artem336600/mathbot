@@ -14,10 +14,62 @@ window.modules.topics = {
             <div class="header-actions mb-3" style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
                     <h2 style="font-size:18px;">Управление темами</h2>
-                    <p class="text-muted">Темы, доступные для изучения</p>
+                    <p class="text-muted" style="margin-top:4px;">Темы, доступные для изучения</p>
                 </div>
-                <button class="btn btn-primary" onclick="modules.topics.openModal()"><i class="fa-solid fa-plus"></i> Создать тему</button>
+                <button class="btn btn-primary" onclick="modules.topics.openModal()">
+                    <span class="icon-slot" data-icon="plus"></span> Создать тему
+                </button>
             </div>
+            
+            <div id="topics-content">
+                <div class="text-center" style="padding:40px;">
+                    ${window.svgAnim ? window.svgAnim.loader(40) : 'Загрузка...'}
+                </div>
+            </div>
+        `;
+        ui.injectIcons(view);
+
+        await this.fetchData();
+    },
+
+    fetchData: async function () {
+        const content = document.getElementById('topics-content');
+        try {
+            this.data = await API.get('/topics/');
+            this.renderTable();
+        } catch (e) {
+            content.innerHTML = window.svgAnim ? window.svgAnim.emptyState("Ошибка загрузки данных") : `<p class="text-danger text-center">Ошибка загрузки</p>`;
+        }
+    },
+
+    renderTable: function () {
+        const content = document.getElementById('topics-content');
+        if (!this.data || this.data.length === 0) {
+            content.innerHTML = window.svgAnim ? window.svgAnim.emptyState("Нет добавленных тем") : `<p class="text-center">Нет тем</p>`;
+            return;
+        }
+
+        const rows = this.data.map(t => {
+            const statusBadge = t.is_active
+                ? `<span class="badge success" style="cursor:pointer;" onclick="modules.topics.toggle(${t.id})">Активна</span>`
+                : `<span class="badge secondary" style="cursor:pointer;" onclick="modules.topics.toggle(${t.id})">Скрыта</span>`;
+
+            return `
+                <tr>
+                    <td style="color:var(--c-text-muted);">#${t.id}</td>
+                    <td><strong>${t.title}</strong></td>
+                    <td style="font-family:'Space Grotesk',sans-serif;">${t.questions_count}</td>
+                    <td>${statusBadge}</td>
+                    <td class="text-right">
+                        <button class="btn-icon" onclick='modules.topics.openModal(${JSON.stringify(t).replace(/'/g, "&#39;")})'>
+                            <span class="icon-slot" data-icon="edit"></span>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        content.innerHTML = `
             <div class="table-container">
                 <table class="table w-100" id="topics-table">
                     <thead>
@@ -29,52 +81,12 @@ window.modules.topics = {
                             <th class="text-right">Действия</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr><td colspan="5" class="text-center text-muted">Загрузка...</td></tr>
-                    </tbody>
+                    <tbody>${rows}</tbody>
                 </table>
             </div>
-            
-            <!-- Default structure for generic modals -->
         `;
 
-        await this.fetchData();
-    },
-
-    fetchData: async function () {
-        const tbody = document.querySelector('#topics-table tbody');
-        try {
-            this.data = await API.get('/topics/');
-            this.renderTable();
-        } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Ошибка загрузки</td></tr>`;
-        }
-    },
-
-    renderTable: function () {
-        const tbody = document.querySelector('#topics-table tbody');
-        if (!this.data || this.data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Нет тем</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = this.data.map(t => {
-            const statusBadge = t.is_active
-                ? `<span class="badge bg-success" style="color:white;cursor:pointer;" onclick="modules.topics.toggle(${t.id})">Активна</span>`
-                : `<span class="badge" style="background:#555;color:white;cursor:pointer;" onclick="modules.topics.toggle(${t.id})">Скрыта</span>`;
-
-            return `
-                <tr>
-                    <td>#${t.id}</td>
-                    <td><strong>${t.title}</strong></td>
-                    <td>${t.questions_count}</td>
-                    <td>${statusBadge}</td>
-                    <td class="text-right">
-                        <button class="btn-icon" onclick='modules.topics.openModal(${JSON.stringify(t).replace(/'/g, "&#39;")})'><i class="fa-solid fa-pen"></i></button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
+        ui.injectIcons(content);
     },
 
     toggle: async function (id) {
@@ -105,8 +117,8 @@ window.modules.topics = {
                     <input type="text" id="topic_image_url" class="form-control" value="${topic?.image_url || ''}">
                 </div>
                 
-                <div class="form-actions" style="display:flex; justify-content:flex-end; gap:10px;">
-                    ${isEdit ? `<button type="button" class="btn btn-danger mr-auto" onclick="modules.topics.delete(${topic.id})" style="margin-right:auto"><i class="fa-solid fa-trash"></i> Удалить</button>` : ''}
+                <div class="form-actions" style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+                    ${isEdit ? `<button type="button" class="btn btn-danger mr-auto" onclick="modules.topics.delete(${topic.id})" style="margin-right:auto"><span class="icon-slot" data-icon="trash"></span> Удалить</button>` : ''}
                     <button type="button" class="btn btn-secondary" onclick="ui.closeModal()">Отмена</button>
                     <button type="submit" class="btn btn-primary">Сохранить</button>
                 </div>

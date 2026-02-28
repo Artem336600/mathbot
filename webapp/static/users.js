@@ -14,46 +14,39 @@ window.modules.users = {
         const view = document.getElementById('view-users');
 
         view.innerHTML = `
-            <div class="header-actions mb-3" style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="header-actions mb-3" style="display:flex; justify-content:space-between; align-items:flex-end;">
                 <div>
                     <h2 style="font-size:18px;">Пользователи бота</h2>
-                    <p class="text-muted">Управление пользователями и блокировки</p>
+                    <p class="text-muted" style="margin-top:4px;">Управление пользователями и блокировки</p>
                 </div>
             </div>
             
-            <div class="mb-3" style="display:flex; gap:10px;">
+            <div class="mb-4" style="display:flex; gap:10px; max-width:400px;">
                 <input type="text" id="users-search" class="form-control" placeholder="Поиск по нику, имени или ID..." value="${this.search}" onkeypress="if(event.key === 'Enter') modules.users.doSearch()">
-                <button class="btn btn-primary" onclick="modules.users.doSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
+                <button class="btn btn-primary" onclick="modules.users.doSearch()" style="padding: 12px 16px;">
+                    <span class="icon-slot" data-icon="search"></span>
+                </button>
             </div>
             
-            <div class="table-container">
-                <table class="table w-100" id="users-table">
-                    <thead>
-                        <tr>
-                            <th>ID / User</th>
-                            <th>Опыт / Уровень</th>
-                            <th>Точность / Стрик</th>
-                            <th>Статус</th>
-                            <th class="text-right">Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td colspan="5" class="text-center text-muted">Загрузка...</td></tr>
-                    </tbody>
-                </table>
+            <div id="users-content">
+                <div class="text-center" style="padding:40px;">
+                    ${window.svgAnim ? window.svgAnim.loader(40) : 'Загрузка...'}
+                </div>
             </div>
-            <div class="mt-3" style="display:flex; justify-content:space-between; align-items:center;">
-                <button class="btn btn-secondary" onclick="modules.users.prevPage()" id="btn-prev-page"><i class="fa-solid fa-chevron-left"></i> Назад</button>
-                <span id="page-indicator" class="text-muted">Страница ${this.page}</span>
-                <button class="btn btn-secondary" onclick="modules.users.nextPage()" id="btn-next-page">Вперед <i class="fa-solid fa-chevron-right"></i></button>
+            
+            <div class="mt-4" style="display:flex; justify-content:space-between; align-items:center;">
+                <button class="btn btn-secondary" onclick="modules.users.prevPage()" id="btn-prev-page" disabled>&larr; Назад</button>
+                <span id="page-indicator" class="badge secondary" style="font-family:'Space Grotesk',sans-serif;">Страница ${this.page}</span>
+                <button class="btn btn-secondary" onclick="modules.users.nextPage()" id="btn-next-page" disabled>Вперед &rarr;</button>
             </div>
         `;
+        ui.injectIcons(view);
 
         await this.fetchData();
     },
 
     fetchData: async function () {
-        const tbody = document.querySelector('#users-table tbody');
+        const content = document.getElementById('users-content');
         document.getElementById('btn-prev-page').disabled = this.page <= 1;
         document.getElementById('page-indicator').innerText = `Страница ${this.page}`;
 
@@ -66,7 +59,7 @@ window.modules.users = {
 
             this.renderTable();
         } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Ошибка загрузки</td></tr>`;
+            content.innerHTML = window.svgAnim ? window.svgAnim.emptyState("Ошибка загрузки данных") : `<p class="text-danger text-center">Ошибка загрузки</p>`;
         }
     },
 
@@ -90,42 +83,64 @@ window.modules.users = {
     },
 
     renderTable: function () {
-        const tbody = document.querySelector('#users-table tbody');
+        const content = document.getElementById('users-content');
         if (!this.data || this.data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Пользователи не найдены</td></tr>`;
+            content.innerHTML = window.svgAnim ? window.svgAnim.emptyState("Пользователи не найдены") : `<p class="text-muted text-center">Пользователи не найдены</p>`;
             return;
         }
 
-        tbody.innerHTML = this.data.map(u => {
+        const rows = this.data.map(u => {
             const statusBadge = u.is_banned
-                ? `<span class="badge bg-danger" style="color:white;">Забанен</span>`
-                : `<span class="badge bg-success" style="color:white;">Активен</span>`;
+                ? `<span class="badge danger">Забанен</span>`
+                : `<span class="badge success">Активен</span>`;
 
             return `
                 <tr>
                     <td>
-                        <div style="font-weight:600">${u.first_name}</div>
-                        <div class="text-muted" style="font-size:11px;">${u.username ? '@' + u.username : 'ID: ' + u.id}</div>
+                        <div style="font-weight:500; font-family:'Inter',sans-serif;">${u.first_name || 'Неизвестно'}</div>
+                        <div class="text-muted" style="font-size:11px; margin-top:2px;">${u.username ? '@' + u.username : 'ID: ' + u.id}</div>
                     </td>
                     <td>
-                        <div>XP: ${u.xp}</div>
-                        <div class="text-primary" style="font-size:11px;">${u.level}</div>
+                        <div style="font-family:'Space Grotesk',sans-serif;">XP: ${u.xp}</div>
+                        <div class="text-primary" style="font-size:11px; margin-top:2px; font-weight:600;">${u.level || 'Новичок'}</div>
                     </td>
                     <td>
-                        <div>${Math.round(u.accuracy_rate * 100)}%</div>
-                        <div class="text-warning" style="font-size:11px;"><i class="fa-solid fa-fire"></i> ${u.streak_days} дн.</div>
+                        <div style="font-family:'Space Grotesk',sans-serif;">${Math.round(u.accuracy_rate * 100)}%</div>
+                        <div class="text-warning" style="font-size:11px; margin-top:2px; display:flex; gap:4px; align-items:center;">
+                            <span class="icon-slot" data-icon="arrow-up" data-size="10"></span> ${u.streak_days} дн.
+                        </div>
                     </td>
                     <td>${statusBadge}</td>
-                    <td class="text-right">
-                        <button class="btn-icon" title="Написать сообщение" onclick="modules.users.openMessageModal(${u.id}, '${u.first_name}')"><i class="fa-solid fa-paper-plane"></i></button>
+                    <td class="text-right" style="display:flex; justify-content:flex-end; gap:6px;">
+                        <button class="btn-icon" title="Написать сообщение" onclick="modules.users.openMessageModal(${u.id}, '${(u.first_name || '').replace(/'/g, "&#39;")}')">
+                            <span class="icon-slot text-primary" data-icon="send"></span>
+                        </button>
                         ${u.is_banned
-                    ? `<button class="btn-icon text-success" title="Разбанить" onclick="modules.users.unban(${u.id})"><i class="fa-solid fa-unlock"></i></button>`
-                    : `<button class="btn-icon text-danger" title="Забанить" onclick="modules.users.ban(${u.id})"><i class="fa-solid fa-ban"></i></button>`
+                    ? `<button class="btn-icon text-success" title="Разбанить" onclick="modules.users.unban(${u.id})"><span class="icon-slot" data-icon="check"></span></button>`
+                    : `<button class="btn-icon text-danger" title="Забанить" onclick="modules.users.ban(${u.id})"><span class="icon-slot" data-icon="ban"></span></button>`
                 }
                     </td>
                 </tr>
             `;
         }).join('');
+
+        content.innerHTML = `
+            <div class="table-container">
+                <table class="table w-100" id="users-table">
+                    <thead>
+                        <tr>
+                            <th>ID / User</th>
+                            <th>Опыт / Уровень</th>
+                            <th>Точность / Стрик</th>
+                            <th>Статус</th>
+                            <th class="text-right">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        `;
+        ui.injectIcons(content);
     },
 
     ban: async function (id) {
@@ -148,14 +163,16 @@ window.modules.users = {
     openMessageModal: function (id, name) {
         ui.modal(`
             <h3>Сообщение для: ${name}</h3>
-            <p class="text-muted mb-3" style="font-size:12px;">Уведомление будет отправлено ботом напрямую пользователю.</p>
+            <p class="text-muted mb-4" style="font-size:12px;">Уведомление будет отправлено ботом напрямую пользователю.</p>
             <form onsubmit="event.preventDefault(); modules.users.sendMessage(${id})">
                 <div class="form-group">
                     <textarea id="msg_text" class="form-control" rows="4" required placeholder="Введите текст сообщения..."></textarea>
                 </div>
-                <div class="form-actions mt-3" style="display:flex; justify-content:flex-end; gap:10px;">
+                <div class="form-actions mt-4" style="display:flex; justify-content:flex-end; gap:12px;">
                     <button type="button" class="btn btn-secondary" onclick="ui.closeModal()">Отмена</button>
-                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane mr-2"></i> Отправить</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="icon-slot" data-icon="send"></span> Отправить
+                    </button>
                 </div>
             </form>
         `);

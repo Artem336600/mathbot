@@ -7,12 +7,13 @@
     <title>MathTrainer Admin</title>
     <!-- Telegram Web App JS API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Google Fonts: Inter -->
+
+    <!-- Google Fonts: Inter & Space Grotesk -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+        rel="stylesheet">
 
     <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -20,37 +21,45 @@
 <body class="theme-dark">
     <!-- Loader before auth & app init -->
     <div id="app-loader" class="screen-center">
-        <div class="spinner"></div>
-        <p>Инициализация...</p>
+        <!-- Injected via svgAnim.loader() -->
+        <p class="text-muted mt-3">Инициализация...</p>
     </div>
 
     <!-- Main Layout (Hidden until ready) -->
     <div id="app-layout" style="display: none;">
+        <!-- Mobile Sidebar Backdrop -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
         <!-- Sidebar Navigation -->
         <nav class="sidebar">
             <div class="sidebar-header">
-                <i class="fa-solid fa-calculator logo-icon"></i>
-                <h2>MathTrainer</h2>
-                <span class="badge">Admin</span>
+                <div class="logo-wrap" id="app-logo"></div>
+                <div class="logo-text">
+                    <span class="logo-name">MathTrainer</span>
+                    <span class="badge-admin">Admin</span>
+                </div>
             </div>
 
             <ul class="nav-links">
-                <li><a href="#dashboard" class="nav-link active" data-target="dashboard"><i
-                            class="fa-solid fa-chart-pie"></i> Дашборд</a></li>
-                <li><a href="#topics" class="nav-link" data-target="topics"><i class="fa-solid fa-layer-group"></i>
-                        Темы</a></li>
-                <li><a href="#questions" class="nav-link" data-target="questions"><i
-                            class="fa-solid fa-clipboard-question"></i> Вопросы</a></li>
-                <li><a href="#users" class="nav-link" data-target="users"><i class="fa-solid fa-users"></i>
-                        Пользователи</a></li>
-                <li><a href="#broadcast" class="nav-link" data-target="broadcast"><i class="fa-solid fa-bullhorn"></i>
-                        Рассылка</a></li>
+                <li><a href="#dashboard" class="nav-link active" data-target="dashboard"><span class="icon-slot"
+                            data-icon="chart-pie"></span> Дашборд</a></li>
+                <li><a href="#topics" class="nav-link" data-target="topics"><span class="icon-slot"
+                            data-icon="layers"></span> Темы</a></li>
+                <li><a href="#questions" class="nav-link" data-target="questions"><span class="icon-slot"
+                            data-icon="clipboard-question"></span> Вопросы</a></li>
+                <li><a href="#users" class="nav-link" data-target="users"><span class="icon-slot"
+                            data-icon="users"></span> Пользователи</a></li>
+                <li><a href="#broadcast" class="nav-link" data-target="broadcast"><span class="icon-slot"
+                            data-icon="bullhorn"></span> Рассылка</a></li>
             </ul>
 
             <div class="sidebar-footer">
-                <div id="admin-info" class="user-info">
-                    <div class="avatar"><i class="fa-solid fa-user-tie"></i></div>
-                    <span id="admin-name">Admin</span>
+                <div class="admin-card">
+                    <div class="admin-avatar" id="avatar-svg"></div>
+                    <div class="admin-meta">
+                        <span id="admin-name">Admin</span>
+                        <span class="admin-role">Администратор</span>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -59,13 +68,15 @@
         <main class="content-area">
             <header class="topbar">
                 <!-- Mobile toggle -->
-                <button id="sidebar-toggle" class="btn-icon"><i class="fa-solid fa-bars"></i></button>
+                <button id="sidebar-toggle" class="btn-icon"><span class="icon-slot" data-icon="bars"></span></button>
                 <h1 id="page-title">Дашборд</h1>
+
                 <div class="topbar-actions">
-                    <button class="btn-theme-toggle" id="theme-toggle" title="Переключить тему"><i
-                            class="fa-solid fa-moon"></i></button>
                     <!-- TWA allows closing the web app -->
-                    <button class="btn-secondary btn-sm" id="btn-close">Закрыть</button>
+                    <button class="btn btn-secondary btn-sm" id="btn-close">
+                        <span class="icon-slot" data-icon="x" data-size="14"></span>
+                        Закрыть
+                    </button>
                 </div>
             </header>
 
@@ -97,7 +108,7 @@
 
                 <!-- Error View -->
                 <div id="view-error" class="view screen-center">
-                    <i class="fa-solid fa-triangle-exclamation text-danger fa-3x mb-3"></i>
+                    <span class="icon-slot text-danger mb-3" data-icon="alert-triangle" data-size="48"></span>
                     <h3 id="error-title">Ошибка доступа</h3>
                     <p id="error-message" class="text-muted">Произошла ошибка при загрузке данных.</p>
                 </div>
@@ -108,7 +119,12 @@
     <!-- Toast Notification Container -->
     <div id="toast-container"></div>
 
+    <!-- Scripts -->
+    <script src="/static/svg-icons.js"></script>
+    <script src="/static/svg-animations.js"></script>
     <script src="/static/app.js"></script>
+
+    <!-- Feature Modules -->
     <script src="/static/dashboard.js"></script>
     <script src="/static/topics.js"></script>
     <script src="/static/questions.js"></script>
