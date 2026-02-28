@@ -1,5 +1,6 @@
 import contextlib
 from aiogram.types import Message
+from aiogram.exceptions import TelegramBadRequest
 
 async def safe_edit_text(message: Message, text: str, **kwargs):
     """
@@ -11,4 +12,10 @@ async def safe_edit_text(message: Message, text: str, **kwargs):
         with contextlib.suppress(Exception):
             await message.delete()
         return await message.answer(text, **kwargs)
-    return await message.edit_text(text, **kwargs)
+    
+    try:
+        return await message.edit_text(text, **kwargs)
+    except TelegramBadRequest as e:
+        if "message is not modified" in str(e):
+            return message
+        raise e
