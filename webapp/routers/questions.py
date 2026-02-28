@@ -83,6 +83,13 @@ async def delete_question(
     admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db_session)
 ):
+    from repositories.attachment_repo import AttachmentRepository
+    from services.storage_service import StorageService
+    
+    file_keys = await AttachmentRepository.delete_all_for_entity("question", question_id, db)
+    for key in file_keys:
+        await StorageService.delete_file(key)
+        
     deleted = await QuestionRepository.delete(question_id, db)
     if not deleted:
         raise HTTPException(404, "Question not found")

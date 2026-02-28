@@ -114,6 +114,13 @@ async def delete_topic(
     admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db_session)
 ):
+    from repositories.attachment_repo import AttachmentRepository
+    from services.storage_service import StorageService
+    
+    file_keys = await AttachmentRepository.delete_all_for_entity("topic", topic_id, db)
+    for key in file_keys:
+        await StorageService.delete_file(key)
+        
     deleted = await TopicRepository.delete(topic_id, db)
     if not deleted:
         raise HTTPException(404, "Topic not found")

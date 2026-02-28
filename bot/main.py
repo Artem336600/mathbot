@@ -52,6 +52,7 @@ def register_routers(dp: Dispatcher) -> None:
 
 async def on_startup(bot: Bot) -> None:
     logger.info("[BOOT] Starting MathTrainer bot...")
+    logger.debug(f"[CONFIG] S3 endpoint={settings.s3_endpoint_url} bucket={settings.s3_bucket_name}")
 
     # Run DB migrations
     try:

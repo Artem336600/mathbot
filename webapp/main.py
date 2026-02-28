@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from loguru import logger
 
-from webapp.routers import stats, topics, questions, users, broadcast
+from webapp.routers import stats, topics, questions, users, broadcast, attachments
 
 app = FastAPI(
     title="MathTrainer Admin WebApp API",
@@ -53,3 +53,4 @@ app.include_router(topics.router)
 app.include_router(questions.router)
 app.include_router(users.router)
 app.include_router(broadcast.router)
+app.include_router(attachments.router)

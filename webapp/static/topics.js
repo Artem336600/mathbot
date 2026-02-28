@@ -112,11 +112,12 @@ window.modules.topics = {
                     <label>Теория (опционально)</label>
                     <textarea id="topic_theory" class="form-control" rows="4">${topic?.theory_text || ''}</textarea>
                 </div>
-                <div class="form-group mt-2 mb-3">
-                    <label>URL картинки (опционально)</label>
-                    <input type="text" id="topic_image_url" class="form-control" value="${topic?.image_url || ''}">
-                </div>
-                
+
+                ${isEdit ? `<div id="topic-attachments-wrap"></div>` : `
+                <div class="form-group mt-2" style="padding:12px; background:rgba(255,255,255,0.03); border-radius:var(--radius-sm); border:1px dashed var(--c-border-subtle);">
+                    <p class="text-muted" style="font-size:12px; margin:0;">💡 После сохранения темы здесь появится загрузчик фотографий и документов</p>
+                </div>`}
+
                 <div class="form-actions" style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
                     ${isEdit ? `<button type="button" class="btn btn-danger mr-auto" onclick="modules.topics.delete(${topic.id})" style="margin-right:auto"><span class="icon-slot" data-icon="trash"></span> Удалить</button>` : ''}
                     <button type="button" class="btn btn-secondary" onclick="ui.closeModal()">Отмена</button>
@@ -124,24 +125,28 @@ window.modules.topics = {
                 </div>
             </form>
         `);
+
+        if (isEdit && topic.id) {
+            AttachmentsComponent.render('topic-attachments-wrap', 'topic', topic.id, 'photos+docs');
+        }
     },
 
     save: async function (id) {
         const payload = {
             title: document.getElementById('topic_title').value,
             theory_text: document.getElementById('topic_theory').value || null,
-            image_url: document.getElementById('topic_image_url').value || null,
         };
 
         try {
             if (id) {
                 await API.patch(`/topics/${id}`, payload);
                 ui.toast("Тема сохранена", "success");
+                ui.closeModal();
             } else {
-                await API.post(`/topics/`, payload);
-                ui.toast("Тема создана", "success");
+                const created = await API.post(`/topics/`, payload);
+                ui.toast("Тема создана. Теперь откройте её для добавления вложений.", "success");
+                ui.closeModal();
             }
-            ui.closeModal();
             this.fetchData();
         } catch (e) { }
     },

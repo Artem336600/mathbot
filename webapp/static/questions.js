@@ -181,12 +181,13 @@ window.modules.questions = {
                     <label>Пояснение (опц.)</label>
                     <textarea id="q_exp" class="form-control" rows="2">${q?.explanation || ''}</textarea>
                 </div>
-                
-                <div class="form-group mt-2 mb-4">
-                    <label>URL картинки (опц.)</label>
-                    <input type="text" id="q_img" class="form-control" value="${q?.image_url || ''}">
-                </div>
-                
+
+                ${isEdit
+                ? `<div id="question-attachments-wrap"></div>`
+                : `<div class="form-group mt-2" style="padding:10px 14px; background:rgba(255,255,255,0.02); border-radius:var(--radius-sm); border:1px dashed var(--c-border-subtle);">
+                    <p class="text-muted" style="font-size:12px; margin:0;">💡 Фотографии можно добавить после сохранения вопроса</p>
+                   </div>`}
+
                 <div class="form-actions" style="display:flex; justify-content:flex-end; gap:12px; padding-top:12px; border-top:1px solid var(--c-border-subtle);">
                     ${isEdit ? `<button type="button" class="btn btn-danger mr-auto" onclick="modules.questions.delete(${q.id})" style="margin-right:auto"><span class="icon-slot" data-icon="trash"></span> Удалить</button>` : ''}
                     <button type="button" class="btn btn-secondary" onclick="ui.closeModal()">Отмена</button>
@@ -194,6 +195,10 @@ window.modules.questions = {
                 </div>
             </form>
         `);
+
+        if (isEdit && q.id) {
+            AttachmentsComponent.render('question-attachments-wrap', 'question', q.id, 'photos');
+        }
     },
 
     save: async function (id) {
@@ -207,18 +212,18 @@ window.modules.questions = {
             correct_option: document.getElementById('q_correct').value,
             difficulty: parseInt(document.getElementById('q_diff').value),
             explanation: document.getElementById('q_exp').value || null,
-            image_url: document.getElementById('q_img').value || null,
         };
 
         try {
             if (id) {
                 await API.patch(`/questions/${id}`, payload);
                 ui.toast("Вопрос сохранен", "success");
+                ui.closeModal();
             } else {
                 await API.post(`/questions/`, payload);
-                ui.toast("Вопрос создан", "success");
+                ui.toast("Вопрос создан. Откройте его для добавления фото.", "success");
+                ui.closeModal();
             }
-            ui.closeModal();
             this.fetchQuestions();
         } catch (e) { }
     },

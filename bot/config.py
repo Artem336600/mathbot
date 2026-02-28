@@ -30,6 +30,13 @@ class Settings(BaseSettings):
     webapp_host: str = Field(default="0.0.0.0", description="Bind host for local web server")
     webapp_port: int = Field(default=8080, description="Bind port for local web server")
 
+    # S3 Storage
+    s3_endpoint_url: str = Field(default="http://localhost:9000", description="S3 Endpoint URL (MinIO usually)")
+    s3_access_key: str = Field(default="minioadmin", description="S3 Access Key")
+    s3_secret_key: str = Field(default="minioadmin", description="S3 Secret Key")
+    s3_bucket_name: str = Field(default="mathtrainer", description="S3 Bucket Name")
+    s3_public_url: str = Field(default="http://localhost:9000", description="Public URL for presigned links if endpoint is internal")
+
     # Logging
     log_level: str = Field(default="DEBUG", description="Log level (DEBUG/INFO/WARN/ERROR)")
 
