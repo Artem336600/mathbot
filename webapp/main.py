@@ -4,6 +4,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from loguru import logger
 
 from webapp.routers import stats, topics, questions, users, broadcast
@@ -39,6 +40,10 @@ STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(STATIC_DIR):
     # Only mount if exists to avoid startup crash before we create it in Phase 2
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/static/index.html")
 
 @app.get("/api/health")
 async def health_check():
