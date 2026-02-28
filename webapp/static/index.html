@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MathTrainer Admin</title>
+    <!-- Telegram Web App JS API -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body class="theme-dark">
+    <!-- Loader before auth & app init -->
+    <div id="app-loader" class="screen-center">
+        <div class="spinner"></div>
+        <p>Инициализация...</p>
+    </div>
+
+    <!-- Main Layout (Hidden until ready) -->
+    <div id="app-layout" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <i class="fa-solid fa-calculator logo-icon"></i>
+                <h2>MathTrainer</h2>
+                <span class="badge">Admin</span>
+            </div>
+
+            <ul class="nav-links">
+                <li><a href="#dashboard" class="nav-link active" data-target="dashboard"><i
+                            class="fa-solid fa-chart-pie"></i> Дашборд</a></li>
+                <li><a href="#topics" class="nav-link" data-target="topics"><i class="fa-solid fa-layer-group"></i>
+                        Темы</a></li>
+                <li><a href="#questions" class="nav-link" data-target="questions"><i
+                            class="fa-solid fa-clipboard-question"></i> Вопросы</a></li>
+                <li><a href="#users" class="nav-link" data-target="users"><i class="fa-solid fa-users"></i>
+                        Пользователи</a></li>
+                <li><a href="#broadcast" class="nav-link" data-target="broadcast"><i class="fa-solid fa-bullhorn"></i>
+                        Рассылка</a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div id="admin-info" class="user-info">
+                    <div class="avatar"><i class="fa-solid fa-user-tie"></i></div>
+                    <span id="admin-name">Admin</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="content-area">
+            <header class="topbar">
+                <!-- Mobile toggle -->
+                <button id="sidebar-toggle" class="btn-icon"><i class="fa-solid fa-bars"></i></button>
+                <h1 id="page-title">Дашборд</h1>
+                <div class="topbar-actions">
+                    <button class="btn-theme-toggle" id="theme-toggle" title="Переключить тему"><i
+                            class="fa-solid fa-moon"></i></button>
+                    <!-- TWA allows closing the web app -->
+                    <button class="btn-secondary btn-sm" id="btn-close">Закрыть</button>
+                </div>
+            </header>
+
+            <div id="views-container" class="views">
+                <!-- Dashboard View -->
+                <div id="view-dashboard" class="view active">
+                    <p class="text-muted">Дашборд загружается...</p>
+                </div>
+
+                <!-- Topics View -->
+                <div id="view-topics" class="view">
+                    <p class="text-muted">Темы загружаются...</p>
+                </div>
+
+                <!-- Questions View -->
+                <div id="view-questions" class="view">
+                    <p class="text-muted">Вопросы загружаются...</p>
+                </div>
+
+                <!-- Users View -->
+                <div id="view-users" class="view">
+                    <p class="text-muted">Пользователи загружаются...</p>
+                </div>
+
+                <!-- Broadcast View -->
+                <div id="view-broadcast" class="view">
+                    <p class="text-muted">Модуль рассылки загружается...</p>
+                </div>
+
+                <!-- Error View -->
+                <div id="view-error" class="view screen-center">
+                    <i class="fa-solid fa-triangle-exclamation text-danger fa-3x mb-3"></i>
+                    <h3 id="error-title">Ошибка доступа</h3>
+                    <p id="error-message" class="text-muted">Произошла ошибка при загрузке данных.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <script src="/static/app.js"></script>
+    <script src="/static/dashboard.js"></script>
+    <script src="/static/topics.js"></script>
+    <script src="/static/questions.js"></script>
+    <script src="/static/users.js"></script>
+    <script src="/static/broadcast.js"></script>
+</body>
+
+</html>

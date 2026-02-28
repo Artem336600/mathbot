@@ -24,12 +24,13 @@
 
 ### Phase 2: Frontend
 
-- [ ] Task 8: Base HTML/CSS/JS SPA
-- [ ] Task 9: Dashboard page
-- [ ] Task 10: Topics page
-- [ ] Task 11: Questions page
-- [ ] Task 12: Users page
-- [ ] Task 13: Broadcast page
+- [x] Task 8: Base HTML/CSS/JS SPA
+- [x] Task 9: Dashboard page
+- [x] Task 10: Topics page
+- [x] Task 11: Questions page
+- [x] Tasks
+- [x] Task 12: Users page
+- [x] Task 13: Broadcast page
 
 ### Phase 3: Bot Integration
 
