@@ -25,6 +25,11 @@ class Settings(BaseSettings):
         description="Redis connection URL",
     )
 
+    # WebApp backend
+    webapp_url: str = Field(default="http://localhost:8080", description="Public URL for Telegram Web App API")
+    webapp_host: str = Field(default="0.0.0.0", description="Bind host for local web server")
+    webapp_port: int = Field(default=8080, description="Bind port for local web server")
+
     # Logging
     log_level: str = Field(default="DEBUG", description="Log level (DEBUG/INFO/WARN/ERROR)")
 

@@ -93,3 +93,35 @@ class QuestionRepository:
             await db.commit()
             await db.refresh(q)
         return q
+
+    @staticmethod
+    async def delete(question_id: int, db: AsyncSession) -> bool:
+        result = await db.execute(select(Question).where(Question.id == question_id))
+        q = result.scalar_one_or_none()
+        if not q:
+            return False
+        await db.delete(q)
+        await db.commit()
+        return True
+
+    @staticmethod
+    async def bulk_create(questions_data: list[dict], topic_id: int, db: AsyncSession) -> int:
+        count = 0
+        for data in questions_data:
+            q = Question(
+                topic_id=topic_id,
+                text=data["text"],
+                option_a=data["option_a"],
+                option_b=data["option_b"],
+                option_c=data["option_c"],
+                option_d=data["option_d"],
+                correct_option=data["correct_option"],
+                difficulty=data.get("difficulty", 1),
+                explanation=data.get("explanation"),
+                image_url=data.get("image_url"),
+            )
+            db.add(q)
+            count += 1
+        await db.commit()
+        logger.info(f"[REPO:Question] bulk created {count} questions for topic={topic_id}")
+        return count

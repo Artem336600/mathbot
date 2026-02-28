@@ -97,6 +97,10 @@ async def main() -> None:
     dp.update.middleware(BanCheckMiddleware())
     logger.debug("[BOOT] Middlewares registered: DB → User → Ban")
 
+    # Start FastAPI WebApp server as an asyncio background task
+    from webapp.run import start_webapp
+    asyncio.create_task(start_webapp())
+
     # Register routers
     register_routers(dp)
 

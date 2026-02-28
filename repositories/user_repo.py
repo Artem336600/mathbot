@@ -55,3 +55,51 @@ class UserRepository:
         if user:
             user.last_active = datetime.now(timezone.utc)
             await db.commit()
+
+    @staticmethod
+    async def count_all(db: AsyncSession) -> int:
+        from sqlalchemy import func
+        result = await db.execute(select(func.count(User.id)))
+        return result.scalar() or 0
+
+    @staticmethod
+    async def count_banned(db: AsyncSession) -> int:
+        from sqlalchemy import func
+        result = await db.execute(select(func.count(User.id)).where(User.is_banned == True))
+        return result.scalar() or 0
+
+    @staticmethod
+    async def get_paginated(
+        page: int, limit: int, search: str | None, db: AsyncSession
+    ) -> list[User]:
+        stmt = select(User).order_by(User.created_at.desc())
+        
+        if search:
+            search_term = f"%{search}%"
+            # Try parse int for search by id
+            try:
+                search_id = int(search)
+                stmt = stmt.where(
+                    (User.id == search_id) | 
+                    (User.username.ilike(search_term)) | 
+                    (User.first_name.ilike(search_term))
+                )
+            except ValueError:
+                stmt = stmt.where(
+                    (User.username.ilike(search_term)) | 
+                    (User.first_name.ilike(search_term))
+                )
+                
+        stmt = stmt.offset((page - 1) * limit).limit(limit)
+        result = await db.execute(stmt)
+        return list(result.scalars().all())
+
+    @staticmethod
+    async def set_banned(user_id: int, is_banned: bool, db: AsyncSession) -> bool:
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return False
+        user.is_banned = is_banned
+        await db.commit()
+        return True
