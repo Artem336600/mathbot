@@ -36,8 +36,8 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
-    mistakes: Mapped[list["UserMistake"]] = relationship(back_populates="user")
-    progress: Mapped[list["UserProgress"]] = relationship(back_populates="user")
+    mistakes: Mapped[list["UserMistake"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    progress: Mapped[list["UserProgress"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<User id={self.id} level={self.level} xp={self.xp}>"
@@ -74,8 +74,8 @@ class Question(Base):
     explanation: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     topic: Mapped["Topic"] = relationship(back_populates="questions")
-    mistakes: Mapped[list["UserMistake"]] = relationship(back_populates="question")
-    progress: Mapped[list["UserProgress"]] = relationship(back_populates="question")
+    mistakes: Mapped[list["UserMistake"]] = relationship(back_populates="question", cascade="all, delete-orphan")
+    progress: Mapped[list["UserProgress"]] = relationship(back_populates="question", cascade="all, delete-orphan")
 
     def get_options(self) -> dict:
         return {
