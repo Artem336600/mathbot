@@ -127,14 +127,65 @@ window.modules.topics = {
         `);
 
         if (isEdit && topic.id) {
-            AttachmentsComponent.render('topic-attachments-wrap', 'topic', topic.id, 'photos+docs');
+            if (topic.image_url) {
+                const wrap = document.getElementById('topic-attachments-wrap');
+                if (wrap) {
+                    wrap.insertAdjacentHTML('beforeend', `
+                        <div style="margin-top:16px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                                <label style="font-size:13px; font-weight:600; color:var(--c-text); display:flex; align-items:center; gap:8px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                    Изображение (URL)
+                                </label>
+                                <span class="badge secondary" style="font-size:10px;">Из JSON-импорта</span>
+                            </div>
+                            <div style="display:flex; align-items:flex-start; gap:12px; padding:10px 14px;
+                                background:rgba(255,255,255,0.03); border:1px solid var(--c-border-subtle); border-radius:var(--radius-sm);" data-legacy-img="1">
+                                <img src="${topic.image_url.replace(/"/g, '&quot;')}" 
+                                    style="width:64px; height:64px; object-fit:cover; border-radius:6px; flex-shrink:0; border:1px solid var(--c-border);"
+                                    onerror="this.style.display='none'">
+                                <div style="flex-grow:1; min-width:0;">
+                                    <div style="font-size:12px; color:var(--c-text-muted); word-break:break-all;">${topic.image_url}</div>
+                                    <div style="margin-top:8px; display:flex; align-items:center; gap:8px;">
+                                        <input type="text" id="t_img_url" class="form-control" value="${topic.image_url.replace(/"/g, '&quot;')}" 
+                                            style="font-size:12px; flex:1;" placeholder="URL изображения">
+                                        <button type="button" class="btn btn-secondary" style="font-size:11px; padding:5px 10px; white-space:nowrap;"
+                                            onclick="document.getElementById('t_img_url').value=''; this.closest('div[data-legacy-img]').remove();">
+                                            Очистить
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="topic-attachments-inner"></div>
+                    `);
+                }
+            } else {
+                const wrap = document.getElementById('topic-attachments-wrap');
+                if (wrap) wrap.insertAdjacentHTML('beforeend', `
+                    <input type="hidden" id="t_img_url" value="">
+                    <div id="topic-attachments-inner"></div>
+                `);
+            }
+            AttachmentsComponent.render('topic-attachments-inner', 'topic', topic.id, 'photos+docs');
         }
     },
 
     save: async function (id) {
+        let imageUrl = null;
+        if (id) {
+            const imgInput = document.getElementById('t_img_url');
+            if (imgInput) {
+                imageUrl = imgInput.value.trim() || null;
+            }
+        }
+
         const payload = {
             title: document.getElementById('topic_title').value,
             theory_text: document.getElementById('topic_theory').value || null,
+            image_url: imageUrl,
         };
 
         try {

@@ -197,11 +197,66 @@ window.modules.questions = {
         `);
 
         if (isEdit && q.id) {
-            AttachmentsComponent.render('question-attachments-wrap', 'question', q.id, 'photos');
+            // Show legacy image_url (from JSON import) as a preview before S3 attachments
+            if (q.image_url) {
+                const wrap = document.getElementById('question-attachments-wrap');
+                if (wrap) {
+                    wrap.insertAdjacentHTML('beforeend', `
+                        <div style="margin-top:16px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                                <label style="font-size:13px; font-weight:600; color:var(--c-text); display:flex; align-items:center; gap:8px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                    Изображение (URL)
+                                </label>
+                                <span class="badge secondary" style="font-size:10px;">Из JSON-импорта</span>
+                            </div>
+                            <div style="display:flex; align-items:flex-start; gap:12px; padding:10px 14px;
+                                background:rgba(255,255,255,0.03); border:1px solid var(--c-border-subtle); border-radius:var(--radius-sm);" data-legacy-img="1">
+                                <img src="${q.image_url.replace(/"/g, '&quot;')}" 
+                                    style="width:64px; height:64px; object-fit:cover; border-radius:6px; flex-shrink:0; border:1px solid var(--c-border);"
+                                    onerror="this.style.display='none'">
+                                <div style="flex-grow:1; min-width:0;">
+                                    <div style="font-size:12px; color:var(--c-text-muted); word-break:break-all;">${q.image_url}</div>
+                                    <div style="margin-top:8px; display:flex; align-items:center; gap:8px;">
+                                        <input type="text" id="q_img_url" class="form-control" value="${q.image_url.replace(/"/g, '&quot;')}" 
+                                            style="font-size:12px; flex:1;" placeholder="URL изображения">
+                                        <button type="button" class="btn btn-secondary" style="font-size:11px; padding:5px 10px; white-space:nowrap;"
+                                            onclick="document.getElementById('q_img_url').value=''; this.closest('div[data-legacy-img]').remove(); modules.questions._legacyImgCleared=true;">
+                                            Очистить
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="question-attachments-inner"></div>
+                    `);
+                }
+                modules.questions._legacyImgCleared = false;
+            } else {
+                // No legacy image — still add hidden input so save() can read it
+                const wrap = document.getElementById('question-attachments-wrap');
+                if (wrap) wrap.insertAdjacentHTML('beforeend', `
+                    <input type="hidden" id="q_img_url" value="">
+                    <div id="question-attachments-inner"></div>
+                `);
+                modules.questions._legacyImgCleared = false;
+            }
+            AttachmentsComponent.render('question-attachments-inner', 'question', q.id, 'photos');
         }
     },
 
     save: async function (id) {
+        // Resolve image_url: if editing, read from legacy URL input (or null if cleared)
+        let imageUrl = null;
+        if (id) {
+            const imgInput = document.getElementById('q_img_url');
+            if (imgInput) {
+                imageUrl = imgInput.value.trim() || null;
+            }
+        }
+
         const payload = {
             topic_id: parseInt(this.currentTopicId),
             text: document.getElementById('q_text').value,
@@ -212,6 +267,7 @@ window.modules.questions = {
             correct_option: document.getElementById('q_correct').value,
             difficulty: parseInt(document.getElementById('q_diff').value),
             explanation: document.getElementById('q_exp').value || null,
+            image_url: imageUrl,
         };
 
         try {
