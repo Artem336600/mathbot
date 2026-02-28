@@ -57,5 +57,26 @@ async def test_auth_middleware_not_admin(client, monkeypatch):
     client.headers = {"X-Init-Data": "test_dev=123"}
     response = await client.get("/api/stats/")
     
-    assert response.status_code == 401
-    assert "Invalid Telegram initData signature" in response.json()["detail"]
+    assert response.status_code == 403
+    assert "Forbidden" in response.json()["detail"]
+
+@pytest.mark.asyncio
+async def test_auth_middleware_banned_admin(client, db_session, monkeypatch):
+    from bot.config import settings
+    from tests.factories import create_user
+    
+    # 1. Setup admin who is banned
+    uid = 55555
+    monkeypatch.setattr(settings, "admin_ids", [uid])
+    
+    # We must create this user in DB because auth check now hits DB
+    user = create_user(id=uid, is_admin=True, is_banned=True)
+    db_session.add(user)
+    await db_session.commit()
+    
+    # 2. Try to access
+    client.headers = {"X-Init-Data": f"test_dev={uid}"}
+    response = await client.get("/api/stats/")
+    
+    assert response.status_code == 403
+    assert "banned" in response.json()["detail"]

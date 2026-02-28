@@ -31,10 +31,18 @@ TELEGRAM_MEDIA_GROUP_LIMIT = 10
 
 async def _get_photo_media(file_key: str, filename: str) -> str | BufferedInputFile:
     url = await StorageService.get_presigned_url(file_key)
-    if any(x in url for x in ["localhost", "127.0.0.1", "minio"]):
+    
+    # If URL is local, we MUST download it and send as BufferedInputFile
+    is_local = any(x in url for x in ["localhost", "127.0.0.1", "minio"])
+    
+    if is_local:
+        logger.debug(f"[HANDLER:topics] local URL detected for file_key={file_key}, downloading...")
         data = await StorageService.get_file(file_key)
         if data:
             return BufferedInputFile(data, filename=filename)
+        else:
+            logger.error(f"[HANDLER:topics] FAILED to download local file for file_key={file_key}. Telegram will likely reject the URL.")
+            
     return url
 
 
@@ -159,16 +167,26 @@ async def topic_theory(callback: CallbackQuery, db):
         await callback.answer("Тема не найдена.", show_alert=True)
         return
 
-    theory = topic.theory_text or "Теория не добавлена."
-    text = f"📖 <b>{topic.title}</b>\n\n{theory}"
-    markup = topic_card_keyboard(topic_id)
-
     # Fetch attachments
     attachments = await AttachmentRepository.get_for_entity("topic", topic_id, db)
     photos = [a for a in attachments if a.attachment_type == "photo"]
     docs = [a for a in attachments if a.attachment_type == "document"]
+    
+    # Hide "Theory not added" if we have attachments
+    theory_text = topic.theory_text
+    if not theory_text:
+        if photos or docs:
+            theory_text = "" # Just show the title
+        else:
+            theory_text = "Теория не добавлена."
+            
+    text = f"📖 <b>{topic.title}</b>\n\n{theory_text}".strip()
+    markup = topic_card_keyboard(topic_id)
 
     logger.debug(f"[HANDLER:topics] sending theory topic={topic_id}: photos={len(photos)} docs={len(docs)}")
+
+    text_fits_caption = len(text) <= 1000
+    sent_text_as_caption = False
 
     if photos:
         try:
@@ -182,9 +200,10 @@ async def topic_theory(callback: CallbackQuery, db):
             media = []
             for i, p in enumerate(batch):
                 photo_file = await _get_photo_media(p.file_key, p.file_name)
-                # First photo of the very first batch gets theory text as caption
-                if batch_start == 0 and i == 0:
+                # First photo of the very first batch gets theory text as caption if it fits
+                if batch_start == 0 and i == 0 and text_fits_caption:
                     media.append(InputMediaPhoto(media=photo_file, caption=text, parse_mode="HTML"))
+                    sent_text_as_caption = True
                 else:
                     media.append(InputMediaPhoto(media=photo_file))
             try:
@@ -192,35 +211,47 @@ async def topic_theory(callback: CallbackQuery, db):
             except Exception as e:
                 logger.error(f"[HANDLER:topics] failed to send media group: {e}")
 
-        # Navigation keyboard after photos
-        await callback.message.answer("📚 Вернуться:", reply_markup=markup)
-        logger.info(f"[HANDLER:topics] theory sent with media group to user={callback.from_user.id}")
-    else:
-        # No attachment photos — use legacy image_url or plain text
-        if topic.image_url:
-            try:
-                await callback.message.delete()
-            except Exception:
-                pass
-            await callback.message.answer_photo(
-                photo=topic.image_url,
-                caption=text,
-                reply_markup=markup,
-                parse_mode="HTML"
-            )
-        else:
-            await safe_edit_text(callback.message, text, reply_markup=markup, parse_mode="HTML")
-
     # Send documents as separate messages
-    for doc_att in docs:
+    for idx, doc_att in enumerate(docs):
         doc_file = await _get_photo_media(doc_att.file_key, doc_att.file_name)
         try:
+            doc_caption = f"📎 {doc_att.file_name}"
+            # If text wasn't sent as photo caption and we have docs, use the first doc
+            if not sent_text_as_caption and idx == 0 and not photos and text_fits_caption:
+                 doc_caption = text
+                 sent_text_as_caption = True
+            
             await callback.message.answer_document(
                 document=doc_file,
-                caption=f"📎 {doc_att.file_name}"
+                caption=doc_caption,
+                parse_mode="HTML"
             )
         except Exception as e:
             logger.error(f"[HANDLER:topics] failed to send document {doc_att.id}: {e}")
+
+    if not sent_text_as_caption:
+        # Fallback if no valid media with caption was sent
+        if not photos and not docs:
+           if topic.image_url:
+               try:
+                   await callback.message.delete()
+               except Exception:
+                   pass
+               await callback.message.answer_photo(
+                    photo=topic.image_url,
+                    caption=text if text_fits_caption else "💡 Теория слишком длинная (см. в меню).",
+                    reply_markup=markup,
+                    parse_mode="HTML"
+               )
+           else:
+               await safe_edit_text(callback.message, text, reply_markup=markup, parse_mode="HTML")
+        else:
+             # Text was too long or we had photos but text didn't fit, send standalone text
+             await callback.message.answer(text, parse_mode="HTML")
+             await callback.message.answer("📚 Вернуться:", reply_markup=markup)
+    else:
+        # Text was sent, but we still need the keyboard
+        await callback.message.answer("📚 Вернуться:", reply_markup=markup)
 
     await callback.answer()
 

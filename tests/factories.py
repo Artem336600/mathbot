@@ -7,7 +7,8 @@ def create_user(
     first_name: str = "Test",
     xp: int = 0,
     level: str = "Новичок",
-    is_admin: bool = False
+    is_admin: bool = False,
+    is_banned: bool = False
 ) -> User:
     return User(
         id=id,
@@ -16,24 +17,29 @@ def create_user(
         xp=xp,
         level=level,
         is_admin=is_admin,
+        is_banned=is_banned
     )
 
 def create_topic(
+    id: int = None,
     title: str = "Test Topic",
     is_active: bool = True
 ) -> Topic:
     return Topic(
+        id=id,
         title=title,
         is_active=is_active
     )
 
 def create_question(
     topic_id: int,
+    id: int = None,
     text: str = "What is 2+2?",
     difficulty: int = 1,
     correct_option: str = "a"
 ) -> Question:
     return Question(
+        id=id,
         topic_id=topic_id,
         text=text,
         difficulty=difficulty,

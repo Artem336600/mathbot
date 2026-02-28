@@ -11,6 +11,12 @@ Telegram-бот для тренировки математики на Python/Aio
 - 👤 **Профиль** — XP bar, уровни, серия, точность
 - 🔧 **Админка (Mini App)** — управление темами/вопросами (импорт JSON), бан пользователей, статистика, рассылка через FastAPI Dashboard
 
+## Документация
+
+- [Overview](Product_Scope%20(2).md)
+- [Testing Guide](docs/TESTING.md)
+- [User Flow](UserFlow.md)
+
 ## Требования
 
 - Docker & Docker Compose

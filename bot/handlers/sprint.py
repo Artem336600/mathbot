@@ -13,7 +13,11 @@ from repositories.question_repo import QuestionRepository
 from services import session_service, stats_service
 from services.mistake_service import add_mistake
 from services.question_service import get_sprint_questions
-from bot.utils import safe_edit_text
+from services.storage_service import StorageService
+from repositories.attachment_repo import AttachmentRepository
+from bot.utils import safe_edit_text, get_question_media
+from bot.config import settings
+from aiogram.types import BufferedInputFile
 
 router = Router()
 
@@ -83,16 +87,23 @@ async def sprint_answer(callback: CallbackQuery, db, user):
         f"[HANDLER:sprint] ans={option} q={question_id} correct={is_correct} user={uid}"
     )
 
+    # Check for already solved status BEFORE adding new attempt
+    solved_ids = await ProgressRepository.get_solved_ids(uid, question.topic_id, db)
+    already_solved = question_id in solved_ids
+
     # Save progress
     await ProgressRepository.add(uid, question_id, is_correct, db)
 
     # Handle result
     if is_correct:
-        xp_result = await stats_service.award_xp(uid, stats_service.XP_CORRECT, db)
-        feedback = (
-            f"✅ <b>Правильно!</b> +{stats_service.XP_CORRECT} XP\n"
-            + (f"🎉 <b>Новый уровень: {xp_result['level']}!</b>\n" if xp_result.get("level_up") else "")
-        )
+        if already_solved:
+            feedback = f"✅ <b>Правильно!</b> (уже решено ранее)\n"
+        else:
+            xp_result = await stats_service.award_xp(uid, stats_service.XP_CORRECT, db)
+            feedback = (
+                f"✅ <b>Правильно!</b> +{stats_service.XP_CORRECT} XP\n"
+                + (f"🎉 <b>Новый уровень: {xp_result['level']}!</b>\n" if xp_result.get("level_up") else "")
+            )
     else:
         await add_mistake(uid, question_id, db)
         correct_text = question.get_options()[question.correct_option]
@@ -155,11 +166,14 @@ async def sprint_answer(callback: CallbackQuery, db, user):
 @router.callback_query(F.data == "sprint_menu")
 async def sprint_menu(callback: CallbackQuery):
     uid = callback.from_user.id
+    is_admin = uid in settings.admin_ids
     logger.debug(f"[HANDLER:sprint] User {uid} exited sprint to menu")
     await session_service.delete_session(uid, "sprint")
     from bot.keyboards.main_menu import main_menu_keyboard
     await safe_edit_text(callback.message, 
-        "📋 <b>Главное меню</b>", reply_markup=main_menu_keyboard(), parse_mode="HTML"
+        "📋 <b>Главное меню</b>", 
+        reply_markup=main_menu_keyboard(is_admin=is_admin, webapp_url=settings.webapp_url), 
+        parse_mode="HTML"
     )
     await callback.answer()
 
@@ -187,7 +201,24 @@ async def _show_sprint_question(callback: CallbackQuery, session: dict, db) -> N
     )
     
     markup = answer_keyboard(question.get_options())
-    if question.image_url:
+    media, has_media_group = await get_question_media(question, db, StorageService, AttachmentRepository, BufferedInputFile)
+
+    if has_media_group:
+        media[0].caption = text
+        media[0].parse_mode = "HTML"
+        await callback.message.delete()
+        await callback.message.answer_media_group(media=media)
+        # Separately send keyboard since group messages cannot have reply_markup
+        await callback.message.answer("👆 Выберите ответ:", reply_markup=markup)
+    elif media:
+         await callback.message.delete()
+         await callback.message.answer_photo(
+             photo=media[0].media,
+             caption=text,
+             reply_markup=markup,
+             parse_mode="HTML"
+         )
+    elif question.image_url:
         # First question of sprint, coming from intro message without image
         await callback.message.delete()
         await callback.message.answer_photo(
@@ -224,7 +255,21 @@ async def _show_next_question_delayed(callback: CallbackQuery, session: dict, db
     )
     
     markup = answer_keyboard(question.get_options())
-    if question.image_url:
+    media, has_media_group = await get_question_media(question, db, StorageService, AttachmentRepository, BufferedInputFile)
+
+    if has_media_group:
+        media[0].caption = text
+        media[0].parse_mode = "HTML"
+        await callback.message.answer_media_group(media=media)
+        await callback.message.answer("👆 Выберите ответ:", reply_markup=markup)
+    elif media:
+        await callback.message.answer_photo(
+             photo=media[0].media,
+             caption=text,
+             reply_markup=markup,
+             parse_mode="HTML"
+        )
+    elif question.image_url:
         await callback.message.answer_photo(
             photo=question.image_url,
             caption=text,

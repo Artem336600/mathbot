@@ -12,17 +12,6 @@ def mistakes_menu_keyboard(
         rows.append([
             InlineKeyboardButton(text="🎲 Все подряд", callback_data="mis_all"),
         ])
-        if topics_with_mistakes:
-            rows.append([
-                InlineKeyboardButton(text="📂 По теме:", callback_data="mis_by_topic")
-            ])
-            for topic in topics_with_mistakes:
-                rows.append([
-                    InlineKeyboardButton(
-                        text=f"  • {topic.title}",
-                        callback_data=f"mis_top:{topic.id}",
-                    )
-                ])
     rows.append([InlineKeyboardButton(text="🔙 Назад", callback_data="main_menu")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 

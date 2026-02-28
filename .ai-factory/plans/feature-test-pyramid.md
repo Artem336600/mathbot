@@ -57,47 +57,47 @@
 - **Message:** `test: add aiosqlite test infrastructure and service layer logic coverage`
 
 ### Phase 3: Integration Tests (Handlers Layer via Mocks)
-- [ ] **Task 6: Setup Aiogram Mocks**
+- [x] **Task 6: Setup Aiogram Mocks**
   - **File:** `tests/bot/handlers/conftest.py` (New file)
   - **Action:** Add fixtures for mocking `Message`, `CallbackQuery`, and `Bot` instances so we can pass them into handlers.
 
-- [ ] **Task 7: Test Sprint Mode Handler Flow**
+- [x] **Task 7: Test Sprint Mode Handler Flow**
   - **File:** `tests/bot/handlers/test_sprint.py`
   - **Action:** Test `bot/handlers/sprint.py`. Verify that the callback handler starts a session and returns a question keyboard.
   - **Checklist:**
-    - [ ] Call `start_sprint` directly with a fake `CallbackQuery` and mock `db`.
-    - [ ] Assert `callback.message.edit_text` was called with expected question string.
-    - [ ] Assert `SessionService.create_sprint_session` is called or simulated correctly.
+    - [x] Call `start_sprint` directly with a fake `CallbackQuery` and mock `db`.
+    - [x] Assert `callback.message.edit_text` was called with expected question string.
+    - [x] Assert `SessionService.create_sprint_session` is called or simulated correctly.
 
-- [ ] **Task 8: Test Training Mode Handler Flow & Error Recovery**
+- [x] **Task 8: Test Training Mode Handler Flow & Error Recovery**
   - **File:** `tests/bot/handlers/test_training.py`
   - **Action:** Test `bot/handlers/training.py`. Specifically check edge cases like DB failures.
   - **Checklist:**
-    - [ ] Mock `db.commit()` to raise an `IntegrityError` to simulate a DB crash.
-    - [ ] Assert the handler gracefully catches the error (if global exception handler or try/except is used) or logs it properly without exploding silently.
+    - [x] Mock `db.commit()` to raise an `IntegrityError` to simulate a DB crash.
+    - [x] Assert the handler gracefully catches the error (if global exception handler or try/except is used) or logs it properly without exploding silently.
 
 ### Commit Checkpoint 2
-- **Message:** `test: add integration tests for sprint/training handlers`
+- [x] **Message:** `test: add integration tests for sprint/training handlers`
 
 ### Phase 4: Integration Tests (FastAPI WebApp Layer)
-- [ ] **Task 9: Fix & Enhance Authentication API Tests**
+- [x] **Task 9: Fix & Enhance Authentication API Tests**
   - **File:** `tests/webapp/test_auth.py`
   - **Action:** Ensure existing auth tests are passing with the active SQLite mock db context and check edge cases. Add a test for a banned user trying to hit an API endpoint if applicable.
 
-- [ ] **Task 10: Test Admin Broadcast/Upload Endpoints**
+- [x] **Task 10: Test Admin Broadcast/Upload Endpoints**
   - **File:** `tests/webapp/test_admin_api.py` (New file or integrate to existing)
   - **Action:** Test importing a payload JSON for new topics/questions (e.g. simulate a POST request with invalid JSON -> verify `400 Bad Request`).
   - **Checklist:**
-    - [ ] Verify validation errors on broken JSON.
-    - [ ] Verify successful import writes safely to the mock database.
+    - [x] Verify validation errors on broken JSON.
+    - [x] Verify successful import writes safely to the mock database.
 
 ### Phase 5: Documentation
-- [ ] **Task 11: Add Testing Guide to documentation**
+- [x] **Task 11: Add Testing Guide to documentation**
   - **File:** `docs/TESTING.md`
   - **Action:** Document how to run pytest locally, how the SQLite mocking works, and how to write new handler tests.
   - **Checklist:**
-    - [ ] Explain `pytest --cov` syntax.
-    - [ ] Document the `fake_bot` and `aiosqlite` mock DB principles.
+    - [x] Explain `pytest --cov` syntax.
+    - [x] Document the `fake_bot` and `aiosqlite` mock DB principles.
 
 ### Final Commit
-- **Message:** `test: complete integration testing for webapp API and finalize test guides`
+- [x] **Message:** `test: complete integration testing for webapp API and finalize test guides`

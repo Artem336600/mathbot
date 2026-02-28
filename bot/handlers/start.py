@@ -8,6 +8,7 @@ from bot.keyboards.main_menu import main_menu_keyboard
 from bot.keyboards.reply import main_reply_keyboard
 from services import user_service
 from bot.utils import safe_edit_text
+from bot.config import settings
 
 router = Router()
 
@@ -31,6 +32,8 @@ async def cmd_start(message: Message, db, user=None):
         )
     logger.info(f"[HANDLER:start] User {tg_user.id} registered/found: level={user.level}")
 
+    is_admin = tg_user.id in settings.admin_ids
+    
     await message.answer(
         WELCOME_TEXT,
         reply_markup=main_reply_keyboard(),
@@ -38,23 +41,31 @@ async def cmd_start(message: Message, db, user=None):
     )
     await message.answer(
         "📋 <b>Главное меню</b>",
-        reply_markup=main_menu_keyboard(),
+        reply_markup=main_menu_keyboard(is_admin=is_admin, webapp_url=settings.webapp_url),
         parse_mode="HTML",
     )
 
 
 @router.message(F.text == "🏠 Меню")
 async def cmd_menu_reply(message: Message):
-    logger.debug(f"[HANDLER:start] Menu button from user {message.from_user.id}")
-    await message.answer("📋 <b>Главное меню</b>", reply_markup=main_menu_keyboard(), parse_mode="HTML")
+    uid = message.from_user.id
+    is_admin = uid in settings.admin_ids
+    logger.debug(f"[HANDLER:start] Menu button from user {uid}")
+    await message.answer(
+        "📋 <b>Главное меню</b>", 
+        reply_markup=main_menu_keyboard(is_admin=is_admin, webapp_url=settings.webapp_url), 
+        parse_mode="HTML"
+    )
 
 
 @router.callback_query(F.data == "main_menu")
 async def callback_main_menu(callback: CallbackQuery):
-    logger.debug(f"[HANDLER:start] main_menu callback from {callback.from_user.id}")
+    uid = callback.from_user.id
+    is_admin = uid in settings.admin_ids
+    logger.debug(f"[HANDLER:start] main_menu callback from {uid}")
     await safe_edit_text(callback.message, 
         "📋 <b>Главное меню</b>",
-        reply_markup=main_menu_keyboard(),
+        reply_markup=main_menu_keyboard(is_admin=is_admin, webapp_url=settings.webapp_url),
         parse_mode="HTML",
     )
     await callback.answer()

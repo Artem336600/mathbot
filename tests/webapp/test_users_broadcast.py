@@ -6,7 +6,10 @@ import json
 async def test_get_users_empty(authed_client: AsyncClient):
     resp = await authed_client.get("/api/users/")
     assert resp.status_code == 200
-    assert resp.json() == []
+    # There is 1 user: the admin himself (id 12345)
+    users = resp.json()
+    assert len(users) == 1
+    assert users[0]["id"] == 12345
 
 @pytest.mark.asyncio
 async def test_get_users_with_data(authed_client: AsyncClient, db_session):
@@ -18,7 +21,8 @@ async def test_get_users_with_data(authed_client: AsyncClient, db_session):
     resp = await authed_client.get("/api/users/")
     assert resp.status_code == 200
     data = resp.json()
-    assert len(data) == 1
+    # 2 users: admin (12345) + Test (1)
+    assert len(data) == 2
     assert data[0]["first_name"] == "Test"
 
 @pytest.mark.asyncio

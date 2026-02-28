@@ -32,16 +32,26 @@ async def db_session():
         await conn.run_sync(Base.metadata.drop_all)
 
 @pytest_asyncio.fixture(scope="function")
-async def client(db_session):
+async def client(db_session, mocker):
+    from unittest.mock import AsyncMock
+    from webapp.routers.broadcast import get_redis
+
+    # Mock Redis
+    mock_redis = AsyncMock()
+    async def override_get_redis():
+        yield mock_redis
+
     # Override FastAPI dependency for database session
     async def override_get_db():
         yield db_session
 
     app.dependency_overrides[get_db_session] = override_get_db
+    app.dependency_overrides[get_redis] = override_get_redis
     
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:
+        ac.mock_redis = mock_redis
         yield ac
 
     # Clean up overrides
@@ -58,12 +68,16 @@ def mock_admin_init_data():
 @pytest_asyncio.fixture
 async def authed_client(client, db_session, monkeypatch):
     from bot.config import settings
+    from tests.factories import create_user
     
-    # User 12345 will be our test admin
-    monkeypatch.setattr(settings, "admin_ids", [12345])
+    # 1. User 12345 will be our test admin
+    uid = 12345
+    monkeypatch.setattr(settings, "admin_ids", [uid])
     
-    # We still need to create user 12345 in DB, because the dev backdoor
-    # doesn't hit DB (wait, let's see auth.py: dev stub creates mock User object immediately)
-    # Actually dev stub returns User object immediately bypassing DB entirely!
-    client.headers = {"X-Init-Data": "test_dev=12345"}
+    # 2. We MUST create this user in DB, as auth check now hits DB
+    admin = create_user(id=uid, is_admin=True)
+    db_session.add(admin)
+    await db_session.commit()
+    
+    client.headers = {"X-Init-Data": f"test_dev={uid}"}
     yield client

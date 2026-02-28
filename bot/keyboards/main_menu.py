@@ -2,8 +2,8 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-def main_menu_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
+def main_menu_keyboard(is_admin: bool = False, webapp_url: str = "") -> InlineKeyboardMarkup:
+    rows = [
         [
             InlineKeyboardButton(text="🚀 Спринт", callback_data="sprint_start"),
             InlineKeyboardButton(text="🏋️ Тренировка", callback_data="training_start"),
@@ -15,4 +15,10 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton(text="👤 Профиль", callback_data="profile"),
         ],
-    ])
+    ]
+    if is_admin:
+        from aiogram.types import WebAppInfo
+        rows.append([
+            InlineKeyboardButton(text="📱 Админ-панель", web_app=WebAppInfo(url=webapp_url)),
+        ])
+    return InlineKeyboardMarkup(inline_keyboard=rows)

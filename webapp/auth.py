@@ -62,18 +62,16 @@ async def get_admin_user(
     if settings.log_level == "DEBUG" and "dev_user=" in init_data:
         pass # we could add dev mock here, but let's stick to strict validation
 
-    # In dev mode we might allow a stub payload for easier testing in the browser
+    telegram_id = None
+    user = None
+
     if init_data.startswith("test_dev="):
-        uid = int(init_data.split("=")[1])
-        if uid in settings.admin_ids:
-            return User(id=uid, username="testadmin", first_name="Admin", level="Профессионал")
-
-    user_data = validate_init_data(init_data, settings.bot_token)
-    
-    if not user_data or "id" not in user_data:
-        raise HTTPException(status_code=401, detail="Unauthorized - Invalid Telegram initData signature")
-
-    telegram_id = int(user_data["id"])
+        telegram_id = int(init_data.split("=")[1])
+    else:
+        user_data = validate_init_data(init_data, settings.bot_token)
+        if not user_data or "id" not in user_data:
+            raise HTTPException(status_code=401, detail="Unauthorized - Invalid Telegram initData signature")
+        telegram_id = int(user_data["id"])
     
     # 1. Verification of admin rights
     if telegram_id not in settings.admin_ids:
@@ -88,6 +86,10 @@ async def get_admin_user(
         logger.warning(f"[WEBAPP:AUTH] Admin {telegram_id} not found in DB!")
         raise HTTPException(status_code=401, detail="User not found in bot DB. Send /start to bot first.")
         
+    if user.is_banned:
+        logger.warning(f"[WEBAPP:AUTH] Banned admin {telegram_id} tried to access panel!")
+        raise HTTPException(status_code=403, detail="Forbidden - Your account is banned")
+
     logger.debug(f"[WEBAPP:AUTH] Valid admin request from {telegram_id} (@{user.username})")
     
     return user

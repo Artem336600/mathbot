@@ -37,5 +37,6 @@ async def db(db_engine) -> AsyncSession:
 @pytest.fixture(scope="function")
 def mock_redis(mocker):
     """Mock Redis session service calls."""
-    mock_pool = mocker.patch("bot.utils.get_redis_pool", new_callable=AsyncMock)
-    return mock_pool
+    mock_redis_client = AsyncMock()
+    mocker.patch("services.session_service.get_redis", return_value=mock_redis_client)
+    return mock_redis_client
