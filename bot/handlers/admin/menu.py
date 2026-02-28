@@ -26,7 +26,7 @@ async def cmd_admin(message: Message, user):
     logger.info(f"[HANDLER:admin] Admin {uid} opened panel")
     await message.answer(
         "🔧 <b>Админ-панель MathTrainer</b>\n\nВыберите действие:",
-        reply_markup=admin_menu_keyboard(),
+        reply_markup=admin_menu_keyboard(settings.webapp_url),
         parse_mode="HTML",
     )
 
@@ -40,7 +40,7 @@ async def admin_menu_callback(callback: CallbackQuery):
 
     await safe_edit_text(callback.message, 
         "🔧 <b>Админ-панель MathTrainer</b>\n\nВыберите действие:",
-        reply_markup=admin_menu_keyboard(),
+        reply_markup=admin_menu_keyboard(settings.webapp_url),
         parse_mode="HTML",
     )
     await callback.answer()

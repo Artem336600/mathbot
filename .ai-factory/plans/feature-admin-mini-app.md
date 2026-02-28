@@ -34,7 +34,7 @@
 
 ### Phase 3: Bot Integration
 
-- [ ] Task 14: WebApp button + Docker
+- [x] Task 14: WebApp button + Docker
 
 ### Phase 4: Tests
 

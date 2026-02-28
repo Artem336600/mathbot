@@ -1,11 +1,14 @@
 """Admin keyboards."""
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
 
 from db.models import Topic
 
 
-def admin_menu_keyboard() -> InlineKeyboardMarkup:
+def admin_menu_keyboard(webapp_url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="📱 Открыть админ-панель", web_app=WebAppInfo(url=webapp_url)),
+        ],
         [
             InlineKeyboardButton(text="📚 Управление темами", callback_data="admin_topics"),
             InlineKeyboardButton(text="❓ Управление вопросами", callback_data="admin_questions"),

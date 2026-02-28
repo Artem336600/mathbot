@@ -4,6 +4,8 @@ services:
     container_name: mathtrainer_bot
     restart: unless-stopped
     env_file: .env
+    ports:
+      - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
