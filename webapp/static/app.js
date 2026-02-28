@@ -155,7 +155,8 @@ const app = {
         document.getElementById("app-layout").style.display = "flex";
 
         // Initial route trigger
-        if (!window.location.hash) {
+        // Override Telegram's initial hash params containing initData
+        if (!window.location.hash || window.location.hash.startsWith('#tgWebApp')) {
             window.location.hash = "#dashboard";
         } else {
             app.onHashChange();
@@ -164,7 +165,13 @@ const app = {
 
     onHashChange: () => {
         let hash = window.location.hash.replace('#', '');
-        if (!hash) hash = 'dashboard';
+
+        // Ignore Telegram's parameters in the hash
+        if (!hash || hash.startsWith('tgWebApp')) {
+            hash = 'dashboard';
+            window.location.hash = '#dashboard';
+            return;
+        }
 
         app.switchView(hash);
     },
