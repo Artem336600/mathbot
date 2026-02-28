@@ -24,12 +24,9 @@ window.modules.questions = {
                 </div>
                 
                 <div style="display:flex; gap:12px;">
-                    <div style="position:relative; overflow:hidden; display:inline-block;">
-                        <button class="btn btn-secondary">
-                            <span class="icon-slot" data-icon="upload"></span> Импорт JSON
-                        </button>
-                        <input type="file" id="questions-import-file" accept=".json" style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;" onchange="modules.questions.importJson(event)">
-                    </div>
+                    <button class="btn btn-secondary" onclick="modules.questions.openImportModal()">
+                        <span class="icon-slot" data-icon="upload"></span> Импорт JSON
+                    </button>
                     <button class="btn btn-primary" onclick="modules.questions.openModal()">
                         <span class="icon-slot" data-icon="plus"></span> Вопрос
                     </button>
@@ -236,6 +233,52 @@ window.modules.questions = {
         } catch (e) { }
     },
 
+    openImportModal: function () {
+        if (!this.currentTopicId) {
+            ui.toast("Сначала выберите тему", "error");
+            return;
+        }
+
+        const topicName = this.topics.find(t => t.id == this.currentTopicId)?.title || 'выбранную тему';
+
+        ui.modal(`
+            <h3>Импорт вопросов</h3>
+            <p class="text-muted mt-2 mb-3">Загрузка JSON-файла в тему <strong>${topicName}</strong></p>
+            
+            <div style="background:var(--c-bg); padding:16px; border-radius:var(--radius-sm); border:1px solid var(--c-border); margin-bottom:16px;">
+                <h4 style="font-size:14px; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                    <span class="icon-slot text-primary" data-icon="info" data-size="14"></span> Формат файла:
+                </h4>
+                <p class="text-muted" style="font-size:12px; margin-bottom:12px;">Файл должен содержать массив объектов со следующими полями:</p>
+                <div style="background:#0d0d12; padding:12px; border-radius:6px; font-family:monospace; font-size:11px; color:#a855f7; overflow-x:auto;">
+[
+  {
+    "text": "Текст вопроса?",
+    "option_a": "Вариант А",
+    "option_b": "Вариант B",
+    "option_c": "Вариант C",
+    "option_d": "Вариант D",
+    "correct_option": "a", // a, b, c, d
+    "difficulty": 1,       // 1-3
+    "explanation": "Опц.",
+    "image_url": "Опц."
+  }
+]
+                </div>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                <button class="btn btn-secondary" onclick="ui.closeModal()">Отмена</button>
+                <div style="position:relative; overflow:hidden; display:inline-block;">
+                    <button class="btn btn-primary">
+                        <span class="icon-slot" data-icon="upload"></span> Выбрать файл
+                    </button>
+                    <input type="file" id="questions-import-file" accept=".json" style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;" onchange="modules.questions.importJson(event)">
+                </div>
+            </div>
+        `);
+    },
+
     importJson: async function (e) {
         if (!this.currentTopicId) {
             ui.toast("Сначала выберите тему для импорта", "warning");
@@ -253,6 +296,7 @@ window.modules.questions = {
         formData.append("file", file);
 
         ui.toast("Импортируем вопросы...", "info");
+        ui.closeModal();
 
         try {
             const res = await API.upload('/questions/import', formData);

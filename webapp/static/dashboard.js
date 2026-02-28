@@ -72,29 +72,8 @@ window.modules.dashboard = {
                         <div class="stat-meta text-muted">В базе знаний</div>
                     </div>
 
-                    <!-- Wide Card: Answers Today -->
-                    <div class="stat-card col-2">
-                        <div class="stat-header">
-                            <div class="stat-info">
-                                <h3>Ответы (сегодня / всего)</h3>
-                                <div class="stat-value">
-                                    <span class="count-up text-success" data-val="${data.answers_today}">0</span> 
-                                    <span style="opacity:0.3; font-size:0.8em;">/</span> 
-                                    <span class="count-up" data-val="${data.total_answers}">0</span>
-                                </div>
-                            </div>
-                            <div class="stat-icon success">
-                                <span class="icon-slot" data-icon="check-double" data-size="24"></span>
-                            </div>
-                        </div>
-                        <div class="stat-meta text-success">
-                            <span class="icon-slot" data-icon="calendar" data-size="14"></span>
-                            <span>Рост активности</span>
-                        </div>
-                    </div>
-
                     <!-- Wide Card: Banned Users -->
-                    <div class="stat-card col-2">
+                    <div class="stat-card" style="grid-column: span 4;">
                         <div class="stat-header">
                             <div class="stat-info">
                                 <h3>Забанены</h3>
