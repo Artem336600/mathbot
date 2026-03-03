@@ -124,11 +124,15 @@ async def import_questions(
     valid_data = []
     
     for idx, item in enumerate(data):
+        if not isinstance(item, dict):
+            errors.append(f"Row {idx+1}: item must be a dictionary")
+            continue
+            
         try:
             # We use the QuestionCreate schema to validate each row
             item["topic_id"] = topic_id # force topic_id
             validated = QuestionCreate(**item)
-            valid_data.append(validated.dict())
+            valid_data.append(validated.model_dump())
         except ValidationError as e:
             # Extract error summary
             error_msg = "; ".join([f"{err['loc'][-1]}: {err['msg']}" for err in e.errors()])

@@ -1,6 +1,12 @@
 import pytest
 from unittest.mock import AsyncMock
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from hypothesis import settings, Verbosity, HealthCheck, Phase
+
+# Hypothesis profiles
+settings.register_profile("ci", max_examples=1000, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+settings.register_profile("dev", max_examples=50, deadline=None)
+settings.load_profile("dev")  # default to dev
 
 from db.models import Base
 
