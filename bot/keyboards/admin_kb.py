@@ -9,17 +9,6 @@ def admin_menu_keyboard(webapp_url: str) -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton(text="📱 Открыть админ-панель", web_app=WebAppInfo(url=webapp_url)),
         ],
-        [
-            InlineKeyboardButton(text="📚 Управление темами", callback_data="admin_topics"),
-            InlineKeyboardButton(text="❓ Управление вопросами", callback_data="admin_questions"),
-        ],
-        [
-            InlineKeyboardButton(text="📢 Рассылка", callback_data="admin_broadcast"),
-        ],
-        [
-            InlineKeyboardButton(text="👥 Пользователи", callback_data="admin_users"),
-            InlineKeyboardButton(text="🔙 В меню", callback_data="main_menu"),
-        ],
     ])
 
 

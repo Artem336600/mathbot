@@ -88,3 +88,18 @@ class BroadcastResponse(BaseModel):
     sent: int
     failed: int
     total: int
+
+# ====== Attachments ======
+class AttachmentResponse(BaseModel):
+    id: int
+    entity_type: str
+    entity_id: int
+    attachment_type: str
+    file_name: str
+    file_size: int
+    mime_type: str
+    url: str
+    created_at: str
+
+    class Config:
+        from_attributes = True

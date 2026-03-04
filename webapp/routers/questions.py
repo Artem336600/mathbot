@@ -83,6 +83,13 @@ async def delete_question(
     admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db_session)
 ):
+    from repositories.attachment_repo import AttachmentRepository
+    from services.storage_service import StorageService
+    
+    file_keys = await AttachmentRepository.delete_all_for_entity("question", question_id, db)
+    for key in file_keys:
+        await StorageService.delete_file(key)
+        
     deleted = await QuestionRepository.delete(question_id, db)
     if not deleted:
         raise HTTPException(404, "Question not found")
@@ -117,11 +124,15 @@ async def import_questions(
     valid_data = []
     
     for idx, item in enumerate(data):
+        if not isinstance(item, dict):
+            errors.append(f"Row {idx+1}: item must be a dictionary")
+            continue
+            
         try:
             # We use the QuestionCreate schema to validate each row
             item["topic_id"] = topic_id # force topic_id
             validated = QuestionCreate(**item)
-            valid_data.append(validated.dict())
+            valid_data.append(validated.model_dump())
         except ValidationError as e:
             # Extract error summary
             error_msg = "; ".join([f"{err['loc'][-1]}: {err['msg']}" for err in e.errors()])

@@ -2,8 +2,10 @@
 Topics catalog handler — US-004.
 question_id stored in Redis temp (topics_session:{user_id}), NOT in callback.
 """
+import random
+
 from aiogram import F, Router
-from aiogram.types import CallbackQuery
+from aiogram.types import BufferedInputFile, CallbackQuery, InputMediaPhoto
 from loguru import logger
 
 from bot.keyboards.topics import (
@@ -13,21 +15,117 @@ from bot.keyboards.topics import (
     topic_card_keyboard,
     topics_list_keyboard,
 )
+from repositories.attachment_repo import AttachmentRepository
 from repositories.progress_repo import ProgressRepository
 from repositories.question_repo import QuestionRepository
 from repositories.topic_repo import TopicRepository
 from services import session_service, stats_service
 from services.mistake_service import add_mistake
+from services.storage_service import StorageService
 from bot.utils import safe_edit_text
 
 router = Router()
+
+TELEGRAM_MEDIA_GROUP_LIMIT = 10
+
+
+async def _get_photo_media(file_key: str, filename: str) -> str | BufferedInputFile:
+    url = await StorageService.get_presigned_url(file_key)
+    
+    # If URL is local, we MUST download it and send as BufferedInputFile
+    is_local = any(x in url for x in ["localhost", "127.0.0.1", "minio"])
+    
+    if is_local:
+        logger.debug(f"[HANDLER:topics] local URL detected for file_key={file_key}, downloading...")
+        data = await StorageService.get_file(file_key)
+        if data:
+            return BufferedInputFile(data, filename=filename)
+        else:
+            logger.error(f"[HANDLER:topics] FAILED to download local file for file_key={file_key}. Telegram will likely reject the URL.")
+            
+    return url
+
+
+async def _send_question(callback: CallbackQuery, question, db) -> bool:
+    """
+    Send a question to the user, including any photo attachments.
+    Returns True if a media group was sent (affects how feedback is sent later).
+    """
+    uid = callback.from_user.id
+    attachments = await AttachmentRepository.get_for_entity("question", question.id, db)
+    photos = [a for a in attachments if a.attachment_type == "photo"]
+
+    logger.debug(f"[HANDLER:topics] question {question.id} has {len(photos)} photo attachments")
+
+    text = f"❓ <b>Вопрос</b>\n\n{question.text}"
+    markup = task_solve_keyboard(question.get_options())
+
+    if len(photos) >= 2:
+        # Send as media group — first photo gets caption, rest plain
+        media = []
+        for i, p in enumerate(photos[:TELEGRAM_MEDIA_GROUP_LIMIT]):
+            photo_file = await _get_photo_media(p.file_key, p.file_name)
+            if i == 0:
+                media.append(InputMediaPhoto(media=photo_file, caption=text, parse_mode="HTML"))
+            else:
+                media.append(InputMediaPhoto(media=photo_file))
+
+        try:
+            await callback.message.delete()
+        except Exception:
+            pass
+
+        try:
+            await callback.message.answer_media_group(media=media)
+            # Keyboard must be a separate message since media groups can't have reply_markup
+            await callback.message.answer("👆 Выберите ответ:", reply_markup=markup)
+            logger.info(f"[HANDLER:topics] sent {len(media)} photos for question {question.id} to user={uid}")
+            return True  # has_media_group → feedback must be sent as new message
+        except Exception as e:
+            logger.error(f"[HANDLER:topics] failed to send media group: {e}")
+            # Fallback to plain text
+            await safe_edit_text(callback.message, text, reply_markup=markup, parse_mode="HTML")
+            return False
+
+    elif len(photos) == 1:
+        photo_file = await _get_photo_media(photos[0].file_key, photos[0].file_name)
+        try:
+            await callback.message.delete()
+        except Exception:
+            pass
+        await callback.message.answer_photo(
+            photo=photo_file,
+            caption=text,
+            reply_markup=markup,
+            parse_mode="HTML"
+        )
+        logger.info(f"[HANDLER:topics] sent 1 photo for question {question.id} to user={uid}")
+        return False  # single photo with caption → can edit caption on answer
+
+    else:
+        # Fallback: legacy image_url field
+        if question.image_url:
+            try:
+                await callback.message.delete()
+            except Exception:
+                pass
+            await callback.message.answer_photo(
+                photo=question.image_url,
+                caption=text,
+                reply_markup=markup,
+                parse_mode="HTML"
+            )
+            return False
+        else:
+            await safe_edit_text(callback.message, text, reply_markup=markup, parse_mode="HTML")
+            return False
 
 
 @router.callback_query(F.data == "topics_list")
 async def topics_list(callback: CallbackQuery, db):
     logger.debug(f"[HANDLER:topics] User {callback.from_user.id} opened topics list")
     topics = await TopicRepository.get_all(db)
-    await safe_edit_text(callback.message, 
+    await safe_edit_text(callback.message,
         "📚 <b>Каталог тем</b>\n\nВыбери тему для изучения:",
         reply_markup=topics_list_keyboard(topics),
         parse_mode="HTML",
@@ -55,7 +153,7 @@ async def topic_card(callback: CallbackQuery, db):
         f"📊 Задач: {len(questions)} "
         f"(🟢{easy} 🟡{medium} 🔴{hard})"
     )
-    await safe_edit_text(callback.message, 
+    await safe_edit_text(callback.message,
         text, reply_markup=topic_card_keyboard(topic_id), parse_mode="HTML"
     )
     await callback.answer()
@@ -69,24 +167,92 @@ async def topic_theory(callback: CallbackQuery, db):
         await callback.answer("Тема не найдена.", show_alert=True)
         return
 
-    theory = topic.theory_text or "Теория не добавлена."
-    text = f"📖 <b>{topic.title}</b>\n\n{theory}"
+    # Fetch attachments
+    attachments = await AttachmentRepository.get_for_entity("topic", topic_id, db)
+    photos = [a for a in attachments if a.attachment_type == "photo"]
+    docs = [a for a in attachments if a.attachment_type == "document"]
     
+    # Hide "Theory not added" if we have attachments
+    theory_text = topic.theory_text
+    if not theory_text:
+        if photos or docs:
+            theory_text = "" # Just show the title
+        else:
+            theory_text = "Теория не добавлена."
+            
+    text = f"📖 <b>{topic.title}</b>\n\n{theory_text}".strip()
     markup = topic_card_keyboard(topic_id)
-    if topic.image_url:
-        await callback.message.delete()
-        await callback.message.answer_photo(
-            photo=topic.image_url,
-            caption=text,
-            reply_markup=markup,
-            parse_mode="HTML"
-        )
+
+    logger.debug(f"[HANDLER:topics] sending theory topic={topic_id}: photos={len(photos)} docs={len(docs)}")
+
+    text_fits_caption = len(text) <= 1000
+    sent_text_as_caption = False
+
+    if photos:
+        try:
+            await callback.message.delete()
+        except Exception:
+            pass
+
+        # Send in batches of 10 (Telegram media group limit)
+        for batch_start in range(0, len(photos), TELEGRAM_MEDIA_GROUP_LIMIT):
+            batch = photos[batch_start:batch_start + TELEGRAM_MEDIA_GROUP_LIMIT]
+            media = []
+            for i, p in enumerate(batch):
+                photo_file = await _get_photo_media(p.file_key, p.file_name)
+                # First photo of the very first batch gets theory text as caption if it fits
+                if batch_start == 0 and i == 0 and text_fits_caption:
+                    media.append(InputMediaPhoto(media=photo_file, caption=text, parse_mode="HTML"))
+                    sent_text_as_caption = True
+                else:
+                    media.append(InputMediaPhoto(media=photo_file))
+            try:
+                await callback.message.answer_media_group(media=media)
+            except Exception as e:
+                logger.error(f"[HANDLER:topics] failed to send media group: {e}")
+
+    # Send documents as separate messages
+    for idx, doc_att in enumerate(docs):
+        doc_file = await _get_photo_media(doc_att.file_key, doc_att.file_name)
+        try:
+            doc_caption = f"📎 {doc_att.file_name}"
+            # If text wasn't sent as photo caption and we have docs, use the first doc
+            if not sent_text_as_caption and idx == 0 and not photos and text_fits_caption:
+                 doc_caption = text
+                 sent_text_as_caption = True
+            
+            await callback.message.answer_document(
+                document=doc_file,
+                caption=doc_caption,
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            logger.error(f"[HANDLER:topics] failed to send document {doc_att.id}: {e}")
+
+    if not sent_text_as_caption:
+        # Fallback if no valid media with caption was sent
+        if not photos and not docs:
+           if topic.image_url:
+               try:
+                   await callback.message.delete()
+               except Exception:
+                   pass
+               await callback.message.answer_photo(
+                    photo=topic.image_url,
+                    caption=text if text_fits_caption else "💡 Теория слишком длинная (см. в меню).",
+                    reply_markup=markup,
+                    parse_mode="HTML"
+               )
+           else:
+               await safe_edit_text(callback.message, text, reply_markup=markup, parse_mode="HTML")
+        else:
+             # Text was too long or we had photos but text didn't fit, send standalone text
+             await callback.message.answer(text, parse_mode="HTML")
+             await callback.message.answer("📚 Вернуться:", reply_markup=markup)
     else:
-        await safe_edit_text(callback.message, 
-            text,
-            reply_markup=markup,
-            parse_mode="HTML",
-        )
+        # Text was sent, but we still need the keyboard
+        await callback.message.answer("📚 Вернуться:", reply_markup=markup)
+
     await callback.answer()
 
 
@@ -104,7 +270,7 @@ async def topic_tasks(callback: CallbackQuery, db):
         f"total={len(questions)} solved={len(solved_ids)} user={uid}"
     )
 
-    await safe_edit_text(callback.message, 
+    await safe_edit_text(callback.message,
         f"📝 <b>{topic.title if topic else 'Тема'}</b> — Задачи\n\n"
         f"Решено: {len(solved_ids)}/{len(questions)}",
         reply_markup=tasks_list_keyboard(questions, solved_ids, topic_id),
@@ -123,31 +289,19 @@ async def solve_question(callback: CallbackQuery, db):
         await callback.answer("Вопрос не найден.", show_alert=True)
         return
 
-    # Store current question in Redis temp
+    has_media_group = await _send_question(callback, question, db)
+
+    # Store current question + media group flag in Redis
     await session_service.set_temp(
         uid, "topics_session",
-        {"current_question_id": question_id, "topic_id": question.topic_id}
+        {
+            "current_question_id": question_id,
+            "topic_id": question.topic_id,
+            "has_media_group": has_media_group,
+        }
     )
 
-    logger.debug(f"[HANDLER:topics] User {uid} solving q={question_id}")
-
-    text = f"❓ <b>Вопрос</b>\n\n{question.text}"
-    markup = task_solve_keyboard(question.get_options())
-    
-    if question.image_url:
-        await callback.message.delete()
-        await callback.message.answer_photo(
-            photo=question.image_url,
-            caption=text,
-            reply_markup=markup,
-            parse_mode="HTML"
-        )
-    else:
-        await safe_edit_text(callback.message, 
-            text,
-            reply_markup=markup,
-            parse_mode="HTML",
-        )
+    logger.debug(f"[HANDLER:topics] User {uid} solving q={question_id} has_media_group={has_media_group}")
     await callback.answer()
 
 
@@ -163,6 +317,7 @@ async def topic_answer(callback: CallbackQuery, db, user):
 
     question_id = temp["current_question_id"]
     topic_id = temp["topic_id"]
+    has_media_group = temp.get("has_media_group", False)
 
     question = await QuestionRepository.get_by_id(question_id, db)
     if not question:
@@ -172,11 +327,17 @@ async def topic_answer(callback: CallbackQuery, db, user):
     is_correct = option == question.correct_option
     logger.info(f"[HANDLER:topics] solved q={question_id} correct={is_correct} user={uid}")
 
+    solved_ids = await ProgressRepository.get_solved_ids(uid, topic_id, db)
+    already_solved = question_id in solved_ids
+
     await ProgressRepository.add(uid, question_id, is_correct, db)
 
     if is_correct:
-        await stats_service.award_xp(uid, stats_service.XP_CORRECT, db)
-        feedback = f"✅ <b>Правильно!</b> +{stats_service.XP_CORRECT} XP"
+        if already_solved:
+            feedback = f"✅ <b>Правильно!</b> (уже решено ранее)"
+        else:
+            await stats_service.award_xp(uid, stats_service.XP_CORRECT, db)
+            feedback = f"✅ <b>Правильно!</b> +{stats_service.XP_CORRECT} XP"
     else:
         await add_mistake(uid, question_id, db)
         correct_text = question.get_options()[question.correct_option]
@@ -187,18 +348,19 @@ async def topic_answer(callback: CallbackQuery, db, user):
         )
 
     markup = task_feedback_keyboard(topic_id)
-    if question.image_url:
+
+    if has_media_group:
+        # Media group messages can't have their caption edited — send new message
+        await callback.message.answer(feedback, reply_markup=markup, parse_mode="HTML")
+    elif question.image_url:
         await callback.message.edit_caption(
             caption=feedback,
             reply_markup=markup,
             parse_mode="HTML",
         )
     else:
-        await safe_edit_text(callback.message, 
-            feedback,
-            reply_markup=markup,
-            parse_mode="HTML",
-        )
+        await safe_edit_text(callback.message, feedback, reply_markup=markup, parse_mode="HTML")
+
     await callback.answer()
 
 
@@ -216,30 +378,16 @@ async def topic_next(callback: CallbackQuery, db):
         await callback.answer("🎉 Все задачи темы решены!", show_alert=True)
         return
 
-    import random
     question = random.choice(unsolved)
+    has_media_group = await _send_question(callback, question, db)
 
     await session_service.set_temp(
         uid, "topics_session",
-        {"current_question_id": question.id, "topic_id": topic_id}
+        {
+            "current_question_id": question.id,
+            "topic_id": topic_id,
+            "has_media_group": has_media_group,
+        }
     )
 
-    text = f"❓ <b>Вопрос</b>\n\n{question.text}"
-    markup = task_solve_keyboard(question.get_options())
-    
-    if question.image_url:
-        # since previous message could be text/photo feedback, easier to delete and resend
-        await callback.message.delete()
-        await callback.message.answer_photo(
-            photo=question.image_url,
-            caption=text,
-            reply_markup=markup,
-            parse_mode="HTML"
-        )
-    else:
-        await safe_edit_text(callback.message, 
-            text,
-            reply_markup=markup,
-            parse_mode="HTML",
-        )
     await callback.answer()

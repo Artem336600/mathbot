@@ -7,6 +7,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -36,8 +37,8 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
-    mistakes: Mapped[list["UserMistake"]] = relationship(back_populates="user")
-    progress: Mapped[list["UserProgress"]] = relationship(back_populates="user")
+    mistakes: Mapped[list["UserMistake"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    progress: Mapped[list["UserProgress"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<User id={self.id} level={self.level} xp={self.xp}>"
@@ -74,8 +75,8 @@ class Question(Base):
     explanation: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     topic: Mapped["Topic"] = relationship(back_populates="questions")
-    mistakes: Mapped[list["UserMistake"]] = relationship(back_populates="question")
-    progress: Mapped[list["UserProgress"]] = relationship(back_populates="question")
+    mistakes: Mapped[list["UserMistake"]] = relationship(back_populates="question", cascade="all, delete-orphan")
+    progress: Mapped[list["UserProgress"]] = relationship(back_populates="question", cascade="all, delete-orphan")
 
     def get_options(self) -> dict:
         return {
@@ -123,3 +124,26 @@ class UserProgress(Base):
 
     def __repr__(self) -> str:
         return f"<UserProgress id={self.id} user_id={self.user_id} correct={self.is_correct}>"
+
+
+class Attachment(Base):
+    __tablename__ = "attachments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    entity_type: Mapped[str] = mapped_column(String(16), nullable=False, comment="'topic' or 'question'")
+    entity_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    attachment_type: Mapped[str] = mapped_column(String(16), nullable=False, comment="'photo' or 'document'")
+    file_key: Mapped[str] = mapped_column(String(512), nullable=False)
+    file_name: Mapped[str] = mapped_column(String(256), nullable=False)
+    file_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    mime_type: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("idx_entity_type_id", "entity_type", "entity_id"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<Attachment id={self.id} entity={self.entity_type}:{self.entity_id} type={self.attachment_type}>"

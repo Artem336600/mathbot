@@ -18,7 +18,10 @@ from repositories.topic_repo import TopicRepository
 from services import session_service, stats_service
 from services.mistake_service import add_mistake
 from services.question_service import get_next_training_question
-from bot.utils import safe_edit_text
+from services.storage_service import StorageService
+from repositories.attachment_repo import AttachmentRepository
+from bot.utils import safe_edit_text, get_question_media
+from aiogram.types import BufferedInputFile
 
 router = Router()
 
@@ -106,7 +109,25 @@ async def training_begin(callback: CallbackQuery, db):
     )
     
     markup = training_answer_keyboard(question.get_options())
-    if question.image_url:
+    
+    media, has_media_group = await get_question_media(question, db, StorageService, AttachmentRepository, BufferedInputFile)
+
+    if has_media_group:
+        media[0].caption = text
+        media[0].parse_mode = "HTML"
+        await callback.message.delete()
+        await callback.message.answer_media_group(media=media)
+        # Separately send keyboard since group messages cannot have reply_markup
+        await callback.message.answer("👆 Выберите ответ:", reply_markup=markup)
+    elif media:
+         await callback.message.delete()
+         await callback.message.answer_photo(
+             photo=media[0].media,
+             caption=text,
+             reply_markup=markup,
+             parse_mode="HTML"
+         )
+    elif question.image_url:
         await callback.message.delete()
         await callback.message.answer_photo(
             photo=question.image_url,
@@ -151,16 +172,26 @@ async def training_answer(callback: CallbackQuery, db, user):
         f" user={uid} q={question_id}"
     )
 
+    # Check for already solved status BEFORE adding new attempt
+    solved_ids = await ProgressRepository.get_solved_ids(uid, question.topic_id, db)
+    already_solved = question_id in solved_ids
+
     await ProgressRepository.add(uid, question_id, is_correct, db)
 
     if is_correct:
         session["difficulty"] = min(3, session["difficulty"] + 1)
-        session["xp_earned"] = session.get("xp_earned", 0) + stats_service.XP_CORRECT
-        await stats_service.award_xp(uid, stats_service.XP_CORRECT, db)
-        feedback = (
-            f"✅ <b>Правильно!</b> +{stats_service.XP_CORRECT} XP\n"
-            f"🔼 Сложность: {'⭐' * session['difficulty']}"
-        )
+        if already_solved:
+            feedback = (
+                f"✅ <b>Правильно!</b> (уже решено ранее)\n"
+                f"🔼 Сложность: {'⭐' * session['difficulty']}"
+            )
+        else:
+            session["xp_earned"] = session.get("xp_earned", 0) + stats_service.XP_CORRECT
+            await stats_service.award_xp(uid, stats_service.XP_CORRECT, db)
+            feedback = (
+                f"✅ <b>Правильно!</b> +{stats_service.XP_CORRECT} XP\n"
+                f"🔼 Сложность: {'⭐' * session['difficulty']}"
+            )
     else:
         session["difficulty"] = max(1, session["difficulty"] - 1)
         await add_mistake(uid, question_id, db)
@@ -205,7 +236,21 @@ async def training_answer(callback: CallbackQuery, db, user):
     )
     
     markup = training_answer_keyboard(question.get_options())
-    if question.image_url:
+    media, has_media_group = await get_question_media(question, db, StorageService, AttachmentRepository, BufferedInputFile)
+
+    if has_media_group:
+        media[0].caption = next_text
+        media[0].parse_mode = "HTML"
+        await callback.message.answer_media_group(media=media)
+        await callback.message.answer("👆 Выберите ответ:", reply_markup=markup)
+    elif media:
+        await callback.message.answer_photo(
+             photo=media[0].media,
+             caption=next_text,
+             reply_markup=markup,
+             parse_mode="HTML"
+        )
+    elif question.image_url:
         await callback.message.answer_photo(
             photo=question.image_url,
             caption=next_text,

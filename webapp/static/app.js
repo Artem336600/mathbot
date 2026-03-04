@@ -6,7 +6,7 @@ const tg = window.Telegram.WebApp;
 
 // ==== State & API ====
 const state = {
-    initData: tg.initData || '', // Fallback for local testing can be mocked
+    initData: tg.initData || '',
     user: tg.initDataUnsafe?.user || { first_name: "Local Admin", id: 0 },
     currentView: 'dashboard'
 };
@@ -53,7 +53,6 @@ const API = {
     }),
     delete: (path) => API._fetch(path, { method: 'DELETE' }),
     upload: (path, formData) => {
-        // fetch handles multipart/form-data boundary automatically when body is FormData
         return API._fetch(path, {
             method: 'POST',
             body: formData
@@ -68,17 +67,19 @@ const ui = {
         const el = document.createElement("div");
         el.className = `toast ${type}`;
 
-        const icon = type === 'success' ? 'fa-check-circle text-success' :
-            type === 'error' ? 'fa-circle-xmark text-danger' :
-                type === 'warning' ? 'fa-triangle-exclamation text-warning' :
-                    'fa-info-circle text-primary';
+        const iconName = type === 'success' ? 'check-circle' :
+            type === 'error' ? 'x-circle' :
+                type === 'warning' ? 'alert-triangle' :
+                    'info';
 
-        el.innerHTML = `<i class="fa-solid ${icon}"></i><span>${msg}</span>`;
+        const iconSvg = window.icon(iconName, 20);
+
+        el.innerHTML = `${iconSvg}<span>${msg}</span>`;
         container.appendChild(el);
 
         setTimeout(() => {
             el.style.opacity = '0';
-            setTimeout(() => el.remove(), 300);
+            setTimeout(() => el.remove(), 400);
         }, 3000);
     },
 
@@ -98,9 +99,9 @@ const ui = {
         }
 
         document.getElementById("modal-content").innerHTML = htmlContent;
-        // Trigger reflow & show
-        void backdrop.offsetWidth;
+        void backdrop.offsetWidth; // Trigger reflow
         backdrop.classList.add("show");
+        ui.injectIcons(backdrop);
     },
 
     closeModal: () => {
@@ -109,66 +110,102 @@ const ui = {
             backdrop.classList.remove("show");
             setTimeout(() => {
                 if (!backdrop.classList.contains("show")) backdrop.remove();
-            }, 200);
+            }, 300);
         }
+    },
+
+    /**
+     * Replaces <span class="icon-slot" data-icon="name"> with real SVG icon
+     */
+    injectIcons: (root = document) => {
+        const slots = root.querySelectorAll('.icon-slot');
+        slots.forEach(slot => {
+            const name = slot.getAttribute('data-icon');
+            const size = slot.getAttribute('data-size') || 18;
+            if (name && window.icon) {
+                const svg = window.icon(name, parseInt(size));
+                if (svg) {
+                    slot.innerHTML = svg;
+                    slot.classList.remove('icon-slot');
+                    // carry over classes
+                    const cls = slot.getAttribute('class');
+                    if (cls) slot.firstChild.setAttribute('class', cls);
+                    slot.replaceWith(slot.firstChild);
+                }
+            }
+        });
     }
 };
 
 // ==== App Core (Router & Init) ====
 const app = {
     init: () => {
-        // Expand WebApp by default
         tg.expand();
-        // Set Header Color
-        tg.setHeaderColor("secondary_bg_color");
+        // Force secondary background color header for a seamless look
+        try { tg.setHeaderColor("#13131a"); } catch (e) { }
+        try { tg.setBackgroundColor("#0d0d12"); } catch (e) { }
 
-        // Setup user info
+        // Set User Name
         document.getElementById("admin-name").innerText = state.user.first_name || "Admin";
+
+        // Inject App Loader SVG
+        const loaderContainer = document.getElementById("app-loader");
+        if (loaderContainer && window.svgAnim) {
+            loaderContainer.insertAdjacentHTML('afterbegin', window.svgAnim.loader(64));
+        }
+
+        // Inject SVG Logo
+        const appLogo = document.getElementById("app-logo");
+        if (appLogo && window.svgAnim) {
+            appLogo.innerHTML = window.svgAnim.logo(28);
+        }
+
+        // Set User initial on Avatar
+        const avatarSvg = document.getElementById("avatar-svg");
+        if (avatarSvg) {
+            avatarSvg.innerHTML = window.icon('user-tie', 20);
+        }
+
+        // Inject All Initial Icons
+        ui.injectIcons();
 
         // Setup Router
         window.addEventListener('hashchange', app.onHashChange);
 
         // Setup UI bindings
-        document.getElementById("btn-close").addEventListener("click", () => tg.close());
-
         const sbToggle = document.getElementById("sidebar-toggle");
         const sidebar = document.querySelector(".sidebar");
-        sbToggle.addEventListener("click", () => sidebar.classList.toggle("open"));
+        const overlay = document.getElementById("sidebar-overlay");
 
-        // Allow clicking outside sidebar to close on mobile
-        document.querySelector(".views").addEventListener("click", () => {
-            if (window.innerWidth <= 768) sidebar.classList.remove("open");
+        sbToggle.addEventListener("click", () => {
+            sidebar.classList.toggle("open");
+            overlay.classList.toggle("show");
         });
 
-        // Add theme toggle logic
-        document.getElementById("theme-toggle").addEventListener("click", () => {
-            const body = document.body;
-            if (body.classList.contains("theme-dark")) {
-                body.classList.replace("theme-dark", "theme-light");
-            } else {
-                body.classList.replace("theme-light", "theme-dark");
-            }
+        // Click outside sidebar on mobile
+        overlay.addEventListener("click", () => {
+            sidebar.classList.remove("open");
+            overlay.classList.remove("show");
         });
 
         // Hide loader, show app
-        document.getElementById("app-loader").style.display = "none";
-        document.getElementById("app-layout").style.display = "flex";
+        setTimeout(() => {
+            document.getElementById("app-loader").style.display = "none";
+            document.getElementById("app-layout").style.display = "flex";
 
-        // Initial route trigger
-        // Override Telegram's initial hash params containing initData
-        if (!window.location.hash || window.location.hash.startsWith('#tgWebApp')) {
-            window.location.hash = "#dashboard";
-        } else {
-            app.onHashChange();
-        }
+            // Initial route trigger
+            if (!window.location.hash || window.location.hash.startsWith('#tgWebApp')) {
+                window.location.hash = "#dashboard";
+            } else {
+                app.onHashChange();
+            }
+        }, 800);
     },
 
     onHashChange: () => {
         let hash = window.location.hash.replace('#', '');
 
-        // Ignore Telegram's parameters in the hash
         if (!hash || hash.startsWith('tgWebApp')) {
-            hash = 'dashboard';
             window.location.hash = '#dashboard';
             return;
         }
@@ -182,7 +219,6 @@ const app = {
         // Deactivate all links
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
 
-        // Try finding view
         const targetView = document.getElementById(`view-${viewName}`);
         const targetLink = document.querySelector(`.nav-link[data-target="${viewName}"]`);
 
@@ -191,15 +227,18 @@ const app = {
             if (targetLink) targetLink.classList.add('active');
             document.getElementById('page-title').innerText = targetLink ? targetLink.innerText : viewName;
 
-            // Load module logic dynamically if specified
+            // Load module logic dynamically
             app.loadModule(viewName);
         } else {
             app.showError("404 Не найдено", "Страница не существует.");
         }
 
-        // Close sidebar on mobile
-        if (window.innerWidth <= 768) {
-            document.querySelector('.sidebar').classList.remove('open');
+        // Close sidebar on mobile if open
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.getElementById("sidebar-overlay");
+        if (sidebar && sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
         }
     },
 
@@ -228,13 +267,12 @@ const app = {
             case 'broadcast':
                 if (window.modules?.broadcast) window.modules.broadcast.load();
                 break;
-            // More to come...
         }
     }
 };
 
-window.modules = {}; // Namespace for page modules
+window.modules = {};
 
 // Boot
-// Give it a tiny delay to ensure TG WebApp object is fully hydrated
+// Let DOM and TG WebApp initialize properly
 setTimeout(() => app.init(), 100);

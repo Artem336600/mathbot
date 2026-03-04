@@ -11,6 +11,13 @@ Telegram-бот для тренировки математики на Python/Aio
 - 👤 **Профиль** — XP bar, уровни, серия, точность
 - 🔧 **Админка (Mini App)** — управление темами/вопросами (импорт JSON), бан пользователей, статистика, рассылка через FastAPI Dashboard
 
+## Документация
+
+- [Overview](Product_Scope%20(2).md)
+- [Testing Guide](docs/TESTING.md)
+- [Security Runbook](docs/SECURITY.md)
+- [User Flow](UserFlow.md)
+
 ## Требования
 
 - Docker & Docker Compose
@@ -38,6 +45,9 @@ docker-compose run --rm bot python -m data.seed
 
 # 6. Запустить бота
 docker-compose up -d bot
+
+# Production-hardened запуск
+docker-compose -f docker-compose.yml -f compose.production.yml up -d
 ```
 
 ## Переменные окружения
@@ -120,3 +130,38 @@ mathtrainer/
 
 - `/start` — запустить бота
 - `/admin` — открыть панель администратора (только для ADMIN_IDS)
+
+## Тестирование
+
+Проект использует `pytest` для автоматизированного тестирования.
+
+### Запуск стандартных тестов
+
+```bash
+pytest tests/
+```
+
+### Фаззинг и Property-Based тестирование
+
+Для проверки устойчивости логики и API используются тесты на базе `Hypothesis`. Они генерируют сотни случайных сценариев для поиска пограничных случаев.
+
+**Запуск фаззинг-тестов:**
+
+```bash
+# Тесты бизнес-логики (XP, уровни)
+pytest tests/services/test_stats_fuzz.py
+
+# Тесты выбора вопросов
+pytest tests/services/test_question_fuzz.py
+
+# Фаззинг API импорта JSON
+pytest tests/webapp/test_import_fuzz.py
+```
+
+**Режимы фаззинга:**
+
+По умолчанию Hypothesis запускается в профиле `dev` (50 примеров на тест). Для глубокой проверки (1000 примеров) используйте профиль `ci`:
+
+```bash
+pytest tests/ --hypothesis-profile=ci
+```
