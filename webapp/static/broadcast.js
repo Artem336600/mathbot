@@ -86,7 +86,9 @@ window.modules.broadcast = {
         try {
             const res = await API.post('/broadcast/preview', { text });
             document.getElementById('broadcast-preview-container').style.display = 'block';
-            document.getElementById('broadcast-preview-content').innerHTML = res.html.replace(/\n/g, '<br>');
+            const previewEl = document.getElementById('broadcast-preview-content');
+            previewEl.textContent = res.text || '';
+            previewEl.style.whiteSpace = 'pre-wrap';
         } catch (e) { }
     },
 

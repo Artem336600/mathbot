@@ -206,3 +206,39 @@ async def test_cascade_delete_on_topic_delete(authed_client: AsyncClient):
         # Attachment list should be empty (topic gone → attachments gone)
         list_resp = await authed_client.get(f"/api/attachments/topic/{topic_id}")
         assert list_resp.json() == []
+
+
+@pytest.mark.asyncio
+async def test_upload_too_many_files_fails(authed_client: AsyncClient):
+    topic_id = await _create_topic(authed_client)
+    files = [("files", _mk_jpeg(f"{i}.jpg")) for i in range(11)]
+
+    with patch_storage():
+        resp = await authed_client.post(
+            f"/api/attachments/topic/{topic_id}/upload",
+            files=files,
+        )
+
+    assert resp.status_code == 400
+    assert "Too many files" in resp.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_upload_sanitizes_filename(authed_client: AsyncClient):
+    topic_id = await _create_topic(authed_client)
+
+    with patch_storage():
+        resp = await authed_client.post(
+            f"/api/attachments/topic/{topic_id}/upload",
+            files=[("files", _mk_jpeg("../../evil<>name?.jpg"))],
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+    # File name in response keeps original display name, but key generation must remain safe.
+    # We assert upload path call used sanitized key.
+    called_key = fake_upload.await_args_list[-1].args[0]
+    assert ".." not in called_key
+    assert "<" not in called_key
+    assert ">" not in called_key

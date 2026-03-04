@@ -31,10 +31,11 @@ async def broadcast_preview(
     payload: BroadcastRequest,
     admin: User = Depends(get_admin_user)
 ):
-    """Return preview of the broadcast HTML text."""
-    # We could theoretically render it or just validate the HTML format here using Aiogram's parse_mode
-    # For now, just echo it back. The frontend will do the visual rendering.
-    return {"html": payload.text}
+    """Return preview text for safe rendering on the frontend."""
+    logger.info(
+        f"[WEBAPP:BROADCAST] preview requested by admin={admin.id} text_len={len(payload.text)}"
+    )
+    return {"text": payload.text}
 
 
 @router.get("/status", response_model=BroadcastResponse)

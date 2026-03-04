@@ -1,4 +1,6 @@
 import uuid
+import re
+from pathlib import PurePath
 import aioboto3
 from loguru import logger
 from bot.config import settings
@@ -93,4 +95,8 @@ class StorageService:
     def generate_key(entity_type: str, entity_id: int, filename: str) -> str:
         # e.g. "topic/1/123e4567-e89b-12d3.../image.png"
         unique_id = str(uuid.uuid4())
-        return f"{entity_type}/{entity_id}/{unique_id}/{filename}"
+        safe_name = PurePath(filename or "file.bin").name
+        safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", safe_name).strip("._")
+        if not safe_name:
+            safe_name = "file.bin"
+        return f"{entity_type}/{entity_id}/{unique_id}/{safe_name}"

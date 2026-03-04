@@ -1,0 +1,24 @@
+services:
+  bot:
+    ports: []
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    restart: always
+
+  postgres:
+    ports: []
+    restart: always
+
+  redis:
+    ports: []
+    command: ["redis-server", "--appendonly", "yes", "--protected-mode", "yes"]
+    restart: always
+
+  minio:
+    ports: []
+    command: server /data
+    restart: always
+

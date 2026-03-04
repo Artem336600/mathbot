@@ -19,5 +19,10 @@ COPY . .
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
+RUN addgroup --system app && adduser --system --ingroup app app \
+    && chown -R app:app /app
+
+USER app
+
 CMD ["python", "-m", "bot.main"]
 ENV CACHE_BUST=1

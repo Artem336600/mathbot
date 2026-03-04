@@ -73,6 +73,7 @@ async def authed_client(client, db_session, monkeypatch):
     # 1. User 12345 will be our test admin
     uid = 12345
     monkeypatch.setattr(settings, "admin_ids", [uid])
+    monkeypatch.setattr(settings, "webapp_auth_mode", "test_bypass")
     
     # 2. We MUST create this user in DB, as auth check now hits DB
     admin = create_user(id=uid, is_admin=True)

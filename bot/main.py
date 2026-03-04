@@ -53,6 +53,12 @@ def register_routers(dp: Dispatcher) -> None:
 async def on_startup(bot: Bot) -> None:
     logger.info("[BOOT] Starting MathTrainer bot...")
     logger.debug(f"[CONFIG] S3 endpoint={settings.s3_endpoint_url} bucket={settings.s3_bucket_name}")
+    if settings.s3_access_key == "minioadmin" or settings.s3_secret_key == "minioadmin":
+        logger.warning("[BOOT] Insecure default MinIO credentials detected. Rotate before production.")
+    if "postgres:postgres@" in settings.database_url:
+        logger.warning("[BOOT] Insecure default PostgreSQL credentials detected in DATABASE_URL.")
+    if settings.webapp_auth_mode != "telegram_strict":
+        logger.warning(f"[BOOT] Insecure WEBAPP_AUTH_MODE={settings.webapp_auth_mode}.")
 
     # Run DB migrations
     try:

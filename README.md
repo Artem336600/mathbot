@@ -15,6 +15,7 @@ Telegram-бот для тренировки математики на Python/Aio
 
 - [Overview](Product_Scope%20(2).md)
 - [Testing Guide](docs/TESTING.md)
+- [Security Runbook](docs/SECURITY.md)
 - [User Flow](UserFlow.md)
 
 ## Требования
@@ -44,6 +45,9 @@ docker-compose run --rm bot python -m data.seed
 
 # 6. Запустить бота
 docker-compose up -d bot
+
+# Production-hardened запуск
+docker-compose -f docker-compose.yml -f compose.production.yml up -d
 ```
 
 ## Переменные окружения

@@ -1,6 +1,6 @@
 """Attachments CRUD API for Admin Dashboard."""
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
@@ -13,6 +13,7 @@ from services.storage_service import StorageService
 router = APIRouter(prefix="/api/attachments", tags=["attachments"])
 
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
+MAX_FILES_PER_REQUEST = 10
 
 PHOTO_MIMES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
 DOC_MIMES = {
@@ -34,6 +35,11 @@ async def upload_attachments(
 ):
     if entity_type not in ["topic", "question"]:
         raise HTTPException(400, "Invalid entity_type")
+    if len(files) > MAX_FILES_PER_REQUEST:
+        logger.warning(
+            f"[WEBAPP:ATTACHMENTS] upload rejected reason=too_many_files count={len(files)} limit={MAX_FILES_PER_REQUEST}"
+        )
+        raise HTTPException(status_code=400, detail=f"Too many files. Max {MAX_FILES_PER_REQUEST} per request")
         
     responses = []
     
@@ -43,7 +49,7 @@ async def upload_attachments(
         size = len(data)
         
         if size > MAX_FILE_SIZE:
-            logger.error(f"[WEBAPP:ATTACHMENTS] upload failed: exceeded 20MB limit")
+            logger.warning("[WEBAPP:ATTACHMENTS] upload rejected reason=file_too_large")
             raise HTTPException(status_code=400, detail=f"File {file.filename} exceeds 20MB limit")
 
         mime = file.content_type
@@ -54,16 +60,18 @@ async def upload_attachments(
         elif mime in DOC_MIMES:
             attachment_type = "document"
         else:
+            logger.warning("[WEBAPP:ATTACHMENTS] upload rejected reason=unsupported_mime")
             raise HTTPException(status_code=400, detail=f"Unsupported file type: {mime}")
             
         if entity_type == "question" and attachment_type != "photo":
+            logger.warning("[WEBAPP:ATTACHMENTS] upload rejected reason=question_non_photo")
             raise HTTPException(status_code=400, detail="Only photos are allowed for questions")
             
         # Upload to S3
         file_key = StorageService.generate_key(entity_type, entity_id, file.filename)
         try:
             await StorageService.upload_file(file_key, data, mime)
-        except Exception as e:
+        except Exception:
             raise HTTPException(status_code=500, detail=f"Failed to upload {file.filename} to storage")
             
         # Save to DB
@@ -136,7 +144,11 @@ async def delete_attachment(
         raise HTTPException(404, "Attachment not found")
         
     # Delete from S3
-    success = await StorageService.delete_file(att.file_key)
+    deleted_from_storage = await StorageService.delete_file(att.file_key)
+    if not deleted_from_storage:
+        logger.warning(
+            f"[FIX][WEBAPP:ATTACHMENTS] storage_delete_failed attachment_id={attachment_id} file_key={att.file_key}"
+        )
     
     # Delete from DB even if S3 delete failed (it might be missing in S3)
     await AttachmentRepository.delete(attachment_id, db)
